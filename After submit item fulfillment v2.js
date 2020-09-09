@@ -265,7 +265,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                                 log.debug("saveCreMemoEdit", saveCreMemoEdit);
                             }
                         }
-                    } // End - if Credit Memo - apply to new Invoice
+                    } // End - if Credit Memo - apply to New Invoice
                     else if (tranType == customerpayment) { // Start - If Credit Memo Apply to New Invoice
                         custPymtEdit = record.load({
                             type: record.Type.CUSTOMER_PAYMENT,
@@ -297,7 +297,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                                 log.debug("saveCustPymt", saveCustPymt);
                             }
                         }
-                    } // End - if Credit Memo - apply to new Invoice
+                    } // End - if Credit Memo - apply to New Invoice
                 }
             }
         }
