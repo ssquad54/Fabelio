@@ -12,6 +12,9 @@ define(['N/record', 'N/search', 'N/transaction'],
             var createFrom = itemShip.getValue('createdfrom');
             log.debug("CreateFrom", createFrom);
 
+            var createFromText = itemShip.getText('createdfrom');
+            log.debug("createFromText", createFromText);
+
             var shipStatus = itemShip.getText('shipstatus')
             log.debug("shipStatus", shipStatus);
 
@@ -31,7 +34,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                     });
                     log.debug("loadRecord", loadRecord);
 
-                    var salesOrderTranId = getValue({
+                    var salesOrderTranId = loadRecord.getValue({
                         fieldId: 'tranid',
                     });
                     log.debug("salesOrderTranId", salesOrderTranId);
@@ -105,7 +108,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                                         });
                                         log.debug("creditMemo", creditMemo);
 
-                                        var creditMemoTranId = getValue({
+                                        var creditMemoTranId = creditMemo.getValue({
                                             fieldId: 'tranid',
                                         });
                                         log.debug("creditMemoTranId", creditMemoTranId);
@@ -124,16 +127,16 @@ define(['N/record', 'N/search', 'N/transaction'],
                                             log.debug("creApplyInv", creApplyInv);
 
                                             if (creApplyInv == linkId) {
+                                                creditMemo.setValue({
+                                                    fieldId: 'custbody_gill_test_mass_update',
+                                                    value: createFromText
+                                                });
+
                                                 creditMemo.setSublistValue({
                                                     sublistId: 'apply',
                                                     fieldId: 'apply',
                                                     line: x,
                                                     value: false
-                                                });
-
-                                                creditMemo.setValue({
-                                                    fieldId: 'custbody_gill_test_mass_update',
-                                                    value: salesOrderTranId
                                                 });
 
                                                 var saveCreMemo = creditMemo.save()
@@ -171,7 +174,7 @@ define(['N/record', 'N/search', 'N/transaction'],
 
                                                 custPayment.setValue({
                                                     fieldId: 'custbody_gill_test_mass_update',
-                                                    value: salesOrderTranId
+                                                    value: createFromText
                                                 });
                                             }
                                             var saveCustPymt = custPayment.save()
@@ -197,7 +200,7 @@ define(['N/record', 'N/search', 'N/transaction'],
             else if (shipStatus == 'Shipped') {
                 var newInvoice = record.transform({
                     fromType: record.Type.SALES_ORDER,
-                    fromId: salesOrderTranId,
+                    fromId: createFrom,
                     toType: record.Type.INVOICE,
                 });
                 log.debug("newInvoice", newInvoice);
@@ -212,7 +215,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                     title: 'Related Saved Search',
                     id: 'customsearch_related_saved_search',
                     filters: [
-                        ["custbody_gill_test_mass_update", "is", salesOrderTranId],
+                        ["custbody_gill_test_mass_update", "is", createFromText],
                         "AND", ["mainline", "is", "T"]
                     ],
                     columns: [search.createColumn({
