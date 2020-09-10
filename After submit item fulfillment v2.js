@@ -177,7 +177,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                                             log.debug("custPymtApplyInv", custPymtApplyInv);
 
                                             if (custPymtApplyInv == linkId) {
-                                                var custPymtApplyInvAmt = creditMemo.getSublistValue({
+                                                var custPymtApplyInvAmt = custPayment.getSublistValue({
                                                     sublistId: 'apply',
                                                     fieldId: 'amount',
                                                     line: x
