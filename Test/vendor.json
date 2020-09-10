@@ -1,0 +1,39 @@
+{
+    "recordtype": "vendor",
+    "data": [
+        {
+            "vendorid": "VEN-0099",
+            "isperson": "F",
+            "companyname": "Sayur Hijau, PT",
+            "firstname": "",
+            "middlename": "",
+            "lastname": "",
+            "klasifikasiVendor": "tengkulak",
+            "subsidiary": "ksi",
+            "noNppkp": "178 555 556 888",
+            "noNpwp": "77.777.777.7-777.777",
+            "noKtp": "6545 5584 2265 0002",
+            "email": "sayurhijau@email.com",
+            "phone": "0899 9980 0899",
+            "noRekening": "1234567890",
+            "addressbook": [
+                {
+                    "line": "1",
+                    "country": "ID",
+                    "label": "Primary",
+                    "defaultbilling": true,
+                    "defaultshipping": true,
+                    "attention": "Agus",
+                    "addressee": "",
+                    "addr1": "Jalan Persatuan. No.23A",
+                    "addr2": "",
+                    "addr3": "",
+                    "addrphone": "0888 7788 9988",
+                    "city": "Jakarta",
+                    "state": "DKI Jakarta",
+                    "zip": "15968"
+                }
+            ]
+        }
+    ]
+}

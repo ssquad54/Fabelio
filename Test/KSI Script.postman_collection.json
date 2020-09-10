@@ -1,0 +1,93 @@
+{
+	"info": {
+		"_postman_id": "e19976c7-12d2-4dc1-8772-747469bfc2c9",
+		"name": "KSI Script",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "KSI Vendor",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "oauth1",
+		"oauth1": [
+			{
+				"key": "realm",
+				"value": "5456096_SB1",
+				"type": "string"
+			},
+			{
+				"key": "tokenSecret",
+				"value": "088ce7b2880cf1869527090f520ab0c7d3e2584ae98bf447b6f2258cd92e2b9f",
+				"type": "string"
+			},
+			{
+				"key": "token",
+				"value": "d16d870e5b5ddcad2f0eaf2b0c12ab423d5af396099fc193cb729097dd6943b2",
+				"type": "string"
+			},
+			{
+				"key": "consumerSecret",
+				"value": "d8002a19e3366a0618d996acdd15be4c7d44811f52d96f62d874d5d810388266",
+				"type": "string"
+			},
+			{
+				"key": "consumerKey",
+				"value": "024ffea553009ea0ce9d513a6ec81ea606849bfabbf0f6b5226676479966429c",
+				"type": "string"
+			},
+			{
+				"key": "addParamsToHeader",
+				"value": true,
+				"type": "boolean"
+			},
+			{
+				"key": "signatureMethod",
+				"value": "HMAC-SHA256",
+				"type": "string"
+			},
+			{
+				"key": "version",
+				"value": "1.0",
+				"type": "string"
+			},
+			{
+				"key": "addEmptyParamsToSign",
+				"value": false,
+				"type": "boolean"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "868afbd8-1619-47bc-a060-1b5ec324a473",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "71b61041-5745-461b-93e7-6abf226d73c8",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}

@@ -1,0 +1,22 @@
+{
+	"info": {
+		"_postman_id": "bbb2a52f-8283-493f-b153-d58586582418",
+		"name": "Test Script Restlet",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Test REstlet",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
+				},
+				"description": "testing Restlet"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
