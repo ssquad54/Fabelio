@@ -1,4 +1,7 @@
 /**
+ *@copyright 2020
+ *@author Eko Susanto
+ *
  *@NApiVersion 2.x
  *@NScriptType UserEventScript
  */
