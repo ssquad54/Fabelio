@@ -203,7 +203,10 @@ define(['N/record', 'N/search', 'N/transaction'],
                     fromId: createFrom,
                     toType: record.Type.INVOICE,
                 });
-                log.debug("newInvoice", newInvoice);
+
+                var newInvoiceId = newInvoice.save()
+                log.debug("newInvoiceId", newInvoiceId);
+
 
                 var itemShipTranId = itemShip.getValue({
                     fieldId: 'tranid'
@@ -235,33 +238,34 @@ define(['N/record', 'N/search', 'N/transaction'],
                 });
 
                 for (var y = 0; y < searchRecord.length; y++) {
-                    tranType = searchRecord[y].recordType;
+                    var tranType = searchRecord[y].recordType;
+                    log.debug("tranType", tranType);
 
-                    if (tranType == creditmemo) { // Start - If Credit Memo Apply to New Invoice
+                    if (tranType == 'creditmemo') { // Start - If Credit Memo Apply to New Invoice
                         creditMemoEdit = record.load({
                             type: record.Type.CREDIT_MEMO,
-                            id: searchRecord[y]
+                            id: searchRecord[y].id
                         });
                         log.debug("creditMemoEdit", creditMemoEdit);
 
-                        var sublistLength = creditMemo.getLineCount({
+                        var sublistLength = creditMemoEdit.getLineCount({
                             sublistId: 'apply'
                         });
                         log.debug("sublistLength", sublistLength);
 
                         for (var k = 0; k < sublistLength; k++) {
-                            var creApplyNewInv = saveCreMemoEdit.getSublistValue({
+                            var creApplyNewInv = creditMemoEdit.getSublistValue({
                                 sublistId: 'apply',
                                 fieldId: 'internalid',
                                 line: k
                             });
                             log.debug("creApplyInv", creApplyNewInv);
 
-                            if (creApplyNewInv == newInvoice) {
+                            if (creApplyNewInv == newInvoiceId) {
                                 creditMemoEdit.setSublistValue({
                                     sublistId: 'apply',
                                     fieldId: 'apply',
-                                    line: x,
+                                    line: k,
                                     value: true
                                 });
                                 var saveCreMemoEdit = creditMemoEdit.save()
@@ -269,10 +273,10 @@ define(['N/record', 'N/search', 'N/transaction'],
                             }
                         }
                     } // End - if Credit Memo - apply to New Invoice
-                    else if (tranType == customerpayment) { // Start - If Credit Memo Apply to New Invoice
-                        custPymtEdit = record.load({
+                    else if (tranType == 'customerpayment') { // Start - If Credit Memo Apply to New Invoice
+                        var custPymtEdit = record.load({
                             type: record.Type.CUSTOMER_PAYMENT,
-                            id: searchRecord[y]
+                            id: searchRecord[y].id
                         });
                         log.debug("custPymtEdit", custPymtEdit);
 
@@ -289,11 +293,11 @@ define(['N/record', 'N/search', 'N/transaction'],
                             });
                             log.debug("custPymtApplyNewInv", custPymtApplyNewInv);
 
-                            if (custPymtApplyNewInv == newInvoice) {
+                            if (custPymtApplyNewInv == newInvoiceId) {
                                 custPymtEdit.setSublistValue({
                                     sublistId: 'apply',
                                     fieldId: 'apply',
-                                    line: x,
+                                    line: k,
                                     value: true
                                 });
                                 var saveCustPymt = custPymtEdit.save()
