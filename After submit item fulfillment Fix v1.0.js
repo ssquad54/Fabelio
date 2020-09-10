@@ -9,6 +9,9 @@ define(['N/record', 'N/search', 'N/transaction'],
                 return;
             var itemShip = context.newRecord;
 
+            log.debug("itemShip", itemShip);
+            log.debug("itemShip.id", itemShip.id);
+
             var createFrom = itemShip.getValue('createdfrom');
             log.debug("CreateFrom", createFrom);
 
@@ -17,6 +20,25 @@ define(['N/record', 'N/search', 'N/transaction'],
 
             var shipStatus = itemShip.getText('shipstatus')
             log.debug("shipStatus", shipStatus);
+
+            var shipCountSearch = search.create({
+                type: search.Type.TRANSACTION,
+                title: 'Shipping Try in Item Fulfillment',
+                id: 'customsearch_shipping_try_if',
+                columns: [
+                    search.createColumn({
+                        name: "newvalue",
+                        join: "systemNotes"
+                    })
+                ],
+                filters: [
+                    ["internalid", "is", itemShip.id],
+                    "AND", ["systemnotes.newvalue", "is", "Shipped"],
+                    "AND", ["mainline", "is", "T"]
+                ]
+            }).run().getRange(0, 500);
+
+            log.debug("shipCountSearch.length", shipCountSearch.length);
 
             if (shipStatus == 'Packed') { // Start - If Status: Packed
 
@@ -33,11 +55,6 @@ define(['N/record', 'N/search', 'N/transaction'],
                         id: createFrom
                     });
                     log.debug("loadRecord", loadRecord);
-
-                    var salesOrderTranId = loadRecord.getValue({
-                        fieldId: 'tranid',
-                    });
-                    log.debug("salesOrderTranId", salesOrderTranId);
 
                     var linkCount = loadRecord.getLineCount({
                         sublistId: 'links'
@@ -150,11 +167,10 @@ define(['N/record', 'N/search', 'N/transaction'],
                                                     line: x,
                                                     value: false
                                                 });
-
-                                                var saveCreMemo = creditMemo.save()
-                                                log.debug("saveCreMemo", saveCreMemo);
                                             }
                                         }
+                                        var saveCreMemo = creditMemo.save()
+                                        log.debug("saveCreMemo", saveCreMemo);
                                     } // End - if Credit Memo - Uncheck apply invoiceSO
                                     else if (invLinkType == 'Payment') { //  Start - if Payment - Uncheck Apply InvoiceSO
                                         var custPayment = record.load({
@@ -180,7 +196,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                                                 var custPymtApplyInvAmt = custPayment.getSublistValue({
                                                     sublistId: 'apply',
                                                     fieldId: 'amount',
-                                                    line: x
+                                                    line: z
                                                 });
                                                 log.debug("custPymtApplyInvAmt", custPymtApplyInvAmt);
 
@@ -200,12 +216,11 @@ define(['N/record', 'N/search', 'N/transaction'],
                                                     line: z,
                                                     value: false
                                                 });
-
                                             }
-                                            var saveCustPymt = custPayment.save()
-                                            log.debug("saveCustPymt", saveCustPymt);
                                         }
-                                    } ///  End - if Payment - Uncheck Apply InvoiceSO
+                                        var saveCustPymt = custPayment.save()
+                                        log.debug("saveCustPymt", saveCustPymt);
+                                    } //  End - if Payment - Uncheck Apply InvoiceSO
                                 } catch (e) {
                                     log.error({
                                         title: e.name,
@@ -223,6 +238,21 @@ define(['N/record', 'N/search', 'N/transaction'],
                 } // End - If Create From Sales Order
             } // End - If Status: Packed
             else if (shipStatus == 'Shipped') {
+                // Populate Shipped Count to Sales Order
+                var shippedCount = record.load({
+                    type: record.Type.SALES_ORDER,
+                    id: createFrom
+                });
+
+                shippedCount.setValue({
+                    fieldId: 'custbody_shipping_count',
+                    value: shipCountSearch.length + " Shipping Times"
+                });
+
+                var saveSO = shippedCount.save()
+                log.debug("saveSO", saveSO);
+
+                //Create New Invoice Using Transform function
                 var newInvoice = record.transform({
                     fromType: record.Type.SALES_ORDER,
                     fromId: createFrom,
@@ -233,11 +263,12 @@ define(['N/record', 'N/search', 'N/transaction'],
                 log.debug("newInvoiceId", newInvoiceId);
 
 
-                var itemShipTranId = itemShip.getValue({
-                    fieldId: 'tranid'
-                });
-                log.debug("itemShipTranId", itemShipTranId);
+                /*    var itemShipTranId = itemShip.getValue({
+                       fieldId: 'tranid'
+                   });
+                   log.debug("itemShipTranId", itemShipTranId); */
 
+                //create search to find old transaction 
                 var searchRecord = search.create({
                     type: search.Type.TRANSACTION,
                     title: 'Related Saved Search',
@@ -303,11 +334,10 @@ define(['N/record', 'N/search', 'N/transaction'],
                                     line: k,
                                     value: creMemoAmtToApply
                                 });
-
-                                var saveCreMemoEdit = creditMemoEdit.save()
-                                log.debug("saveCreMemoEdit", saveCreMemoEdit);
                             }
                         }
+                        var saveCreMemoEdit = creditMemoEdit.save()
+                        log.debug("saveCreMemoEdit", saveCreMemoEdit);
                     } // End - if Credit Memo - apply to New Invoice
                     else if (tranType == 'customerpayment') { // Start - If Credit Memo Apply to New Invoice
                         var custPymtEdit = record.load({
@@ -346,11 +376,10 @@ define(['N/record', 'N/search', 'N/transaction'],
                                     line: k,
                                     value: custPymtAmtToApply
                                 });
-
-                                var saveCustPymt = custPymtEdit.save()
-                                log.debug("saveCustPymt", saveCustPymt);
                             }
                         }
+                        var saveCustPymt = custPymtEdit.save()
+                        log.debug("saveCustPymt", saveCustPymt);
                     } // End - if Credit Memo - apply to New Invoice
                 }
             }
