@@ -127,9 +127,21 @@ define(['N/record', 'N/search', 'N/transaction'],
                                             log.debug("creApplyInv", creApplyInv);
 
                                             if (creApplyInv == linkId) {
+                                                var creApplyInvAmt = creditMemo.getSublistValue({
+                                                    sublistId: 'apply',
+                                                    fieldId: 'amount',
+                                                    line: x
+                                                });
+                                                log.debug("creApplyInvAmt", creApplyInvAmt);
+
                                                 creditMemo.setValue({
                                                     fieldId: 'custbody_gill_test_mass_update',
                                                     value: createFromText
+                                                });
+
+                                                creditMemo.setValue({
+                                                    fieldId: 'custbody_gill_test_mass_update',
+                                                    value: custbody_amount_to_apply
                                                 });
 
                                                 creditMemo.setSublistValue({
@@ -165,6 +177,23 @@ define(['N/record', 'N/search', 'N/transaction'],
                                             log.debug("custPymtApplyInv", custPymtApplyInv);
 
                                             if (custPymtApplyInv == linkId) {
+                                                var custPymtApplyInvAmt = creditMemo.getSublistValue({
+                                                    sublistId: 'apply',
+                                                    fieldId: 'amount',
+                                                    line: x
+                                                });
+                                                log.debug("custPymtApplyInvAmt", custPymtApplyInvAmt);
+
+                                                custPayment.setValue({
+                                                    fieldId: 'custbody_gill_test_mass_update',
+                                                    value: createFromText
+                                                });
+
+                                                custPayment.setValue({
+                                                    fieldId: 'custbody_amount_to_apply',
+                                                    value: custPymtApplyInvAmt
+                                                });
+
                                                 custPayment.setSublistValue({
                                                     sublistId: 'apply',
                                                     fieldId: 'apply',
@@ -172,10 +201,6 @@ define(['N/record', 'N/search', 'N/transaction'],
                                                     value: false
                                                 });
 
-                                                custPayment.setValue({
-                                                    fieldId: 'custbody_gill_test_mass_update',
-                                                    value: createFromText
-                                                });
                                             }
                                             var saveCustPymt = custPayment.save()
                                             log.debug("saveCustPymt", saveCustPymt);
