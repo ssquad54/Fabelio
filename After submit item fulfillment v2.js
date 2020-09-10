@@ -140,8 +140,8 @@ define(['N/record', 'N/search', 'N/transaction'],
                                                 });
 
                                                 creditMemo.setValue({
-                                                    fieldId: 'custbody_gill_test_mass_update',
-                                                    value: custbody_amount_to_apply
+                                                    fieldId: 'custbody_amount_to_apply',
+                                                    value: creApplyInvAmt
                                                 });
 
                                                 creditMemo.setSublistValue({
@@ -267,11 +267,14 @@ define(['N/record', 'N/search', 'N/transaction'],
                     log.debug("tranType", tranType);
 
                     if (tranType == 'creditmemo') { // Start - If Credit Memo Apply to New Invoice
-                        creditMemoEdit = record.load({
+                        var creditMemoEdit = record.load({
                             type: record.Type.CREDIT_MEMO,
                             id: searchRecord[y].id
                         });
                         log.debug("creditMemoEdit", creditMemoEdit);
+
+                        var creMemoAmtToApply = creditMemoEdit.getValue('custbody_amount_to_apply');
+                        log.debug("creMemoAmtToApply", creMemoAmtToApply);
 
                         var sublistLength = creditMemoEdit.getLineCount({
                             sublistId: 'apply'
@@ -293,6 +296,14 @@ define(['N/record', 'N/search', 'N/transaction'],
                                     line: k,
                                     value: true
                                 });
+
+                                creditMemoEdit.setSublistValue({
+                                    sublistId: 'apply',
+                                    fieldId: 'amount',
+                                    line: k,
+                                    value: creMemoAmtToApply
+                                });
+
                                 var saveCreMemoEdit = creditMemoEdit.save()
                                 log.debug("saveCreMemoEdit", saveCreMemoEdit);
                             }
@@ -304,6 +315,9 @@ define(['N/record', 'N/search', 'N/transaction'],
                             id: searchRecord[y].id
                         });
                         log.debug("custPymtEdit", custPymtEdit);
+
+                        var custPymtAmtToApply = custPymtEdit.getValue('custbody_amount_to_apply');
+                        log.debug("custPymtAmtToApply", custPymtAmtToApply);
 
                         var sublistLength = custPymtEdit.getLineCount({
                             sublistId: 'apply'
@@ -325,6 +339,14 @@ define(['N/record', 'N/search', 'N/transaction'],
                                     line: k,
                                     value: true
                                 });
+
+                                custPymtEdit.setSublistValue({
+                                    sublistId: 'apply',
+                                    fieldId: 'amount',
+                                    line: k,
+                                    value: custPymtAmtToApply
+                                });
+
                                 var saveCustPymt = custPymtEdit.save()
                                 log.debug("saveCustPymt", saveCustPymt);
                             }
