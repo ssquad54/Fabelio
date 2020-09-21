@@ -48,6 +48,25 @@ define(['N/record', 'N/search', 'N/transaction'],
 
             log.debug("shipCountSearch.length", shipCountSearch.length);
 
+            var soShippingCount = search.create({
+                type: search.Type.ITEM_FULFILLMENT,
+                title: 'Shipping Count for SO',
+                id: 'customsearch_shipping_count_so',
+                columns: [
+                    search.createColumn({
+                        name: "newvalue",
+                        join: "systemNotes"
+                    })
+                ],
+                filters: [
+                    ["createfrom", "is", createFrom],
+                    "AND", ["systemnotes.newvalue", "is", "Shipped"],
+                    "AND", ["mainline", "is", "T"]
+                ]
+            }).run().getRange(0, 500);
+
+            log.debug("soShippingCount.length", soShippingCount.length);
+
             if (oldShipStatus == 'Shipped' && newShipStatus == 'Packed') { // Start - If old status = Shipped and New Status: Packed
 
                 var fromRecord = search.lookupFields({ // Get Record Type from Createfrom field
@@ -246,8 +265,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                 } // End - If Create From Sales Order
             } // End - If Status: Packed
             else if (newShipStatus == 'Shipped') {
-                // Populate Shipped Count to Sales Order
-
+                // Populate Shipped Count to Item Fulfillment
                 var shippedCount = record.load({
                     type: record.Type.ITEM_FULFILLMENT,
                     id: newRecord.id
@@ -258,7 +276,21 @@ define(['N/record', 'N/search', 'N/transaction'],
                     value: shipCountSearch.length + " Shipping Times"
                 });
 
-                var saveSO = shippedCount.save()
+                var saveIF = shippedCount.save()
+                log.debug("saveIF", saveIF);
+
+                // Populate Shipping Count to Sales Order
+                var soShippedCount = record.load({
+                    type: record.Type.SALES_ORDER,
+                    id: createFrom
+                });
+
+                soShippedCount.setValue({
+                    fieldId: 'custbody_shipping_count',
+                    value: soShippingCount.length + " Shipping Times"
+                });
+
+                var saveSO = soShippedCount.save()
                 log.debug("saveSO", saveSO);
 
                 //Create New Invoice Using Transform function - akan direview dulu
