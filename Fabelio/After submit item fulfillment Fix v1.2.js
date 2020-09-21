@@ -10,19 +10,24 @@ define(['N/record', 'N/search', 'N/transaction'],
         function afterSubmit(context) {
             if (context.type !== context.UserEventType.EDIT && context.type !== context.UserEventType.PACK && context.type !== context.UserEventType.SHIP)
                 return;
-            var itemShip = context.newRecord;
 
-            log.debug("itemShip", itemShip);
-            log.debug("itemShip.id", itemShip.id);
+            var oldRecord = context.oldRecord;
+            log.debug("oldRecord", oldRecord);
 
-            var createFrom = itemShip.getValue('createdfrom');
+            var newRecord = context.newRecord;
+            log.debug("newRecord", newRecord);
+
+            var createFrom = newRecord.getValue('createdfrom');
             log.debug("CreateFrom", createFrom);
 
-            var createFromText = itemShip.getText('createdfrom');
+            var createFromText = newRecord.getText('createdfrom');
             log.debug("createFromText", createFromText);
 
-            var shipStatus = itemShip.getText('shipstatus')
-            log.debug("shipStatus", shipStatus);
+            var oldShipStatus = oldRecord.getText('shipstatus');
+            log.debug("oldShipStatus", oldShipStatus);
+
+            var newShipStatus = newRecord.getText('shipstatus')
+            log.debug("newShipStatus", newShipStatus);
 
             var shipCountSearch = search.create({
                 type: search.Type.TRANSACTION,
@@ -35,7 +40,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                     })
                 ],
                 filters: [
-                    ["internalid", "is", itemShip.id],
+                    ["internalid", "is", newRecord.id],
                     "AND", ["systemnotes.newvalue", "is", "Shipped"],
                     "AND", ["mainline", "is", "T"]
                 ]
@@ -43,7 +48,7 @@ define(['N/record', 'N/search', 'N/transaction'],
 
             log.debug("shipCountSearch.length", shipCountSearch.length);
 
-            if (shipStatus == 'Packed') { // Start - If Status: Packed
+            if (oldShipStatus == 'Shipped' && newShipStatus == 'Packed') { // Start - If old status = Shipped and New Status: Packed
 
                 var fromRecord = search.lookupFields({ // Get Record Type from Createfrom field
                     type: search.Type.TRANSACTION,
@@ -240,11 +245,12 @@ define(['N/record', 'N/search', 'N/transaction'],
                     }
                 } // End - If Create From Sales Order
             } // End - If Status: Packed
-            else if (shipStatus == 'Shipped') {
+            else if (newShipStatus == 'Shipped') {
                 // Populate Shipped Count to Sales Order
+
                 var shippedCount = record.load({
-                    type: record.Type.SALES_ORDER,
-                    id: createFrom
+                    type: record.Type.ITEM_FULFILLMENT,
+                    id: newRecord.id
                 });
 
                 shippedCount.setValue({
@@ -255,7 +261,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                 var saveSO = shippedCount.save()
                 log.debug("saveSO", saveSO);
 
-                //Create New Invoice Using Transform function
+                //Create New Invoice Using Transform function - akan direview dulu
                 var newInvoice = record.transform({
                     fromType: record.Type.SALES_ORDER,
                     fromId: createFrom,
@@ -266,10 +272,10 @@ define(['N/record', 'N/search', 'N/transaction'],
                 log.debug("newInvoiceId", newInvoiceId);
 
 
-                /*    var itemShipTranId = itemShip.getValue({
+                /*    var newRecordTranId = newRecord.getValue({
                        fieldId: 'tranid'
                    });
-                   log.debug("itemShipTranId", itemShipTranId); */
+                   log.debug("newRecordTranId", newRecordTranId); */
 
                 //create search to find old transaction 
                 var searchRecord = search.create({
