@@ -384,7 +384,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                         var saveCustPymt = custPymtEdit.save()
                         log.debug("saveCustPymt", saveCustPymt);
                     } // End - if Credit Memo - apply to New Invoice
-                }
+                } */
             }
         }
         return {
