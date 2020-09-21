@@ -59,7 +59,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                     })
                 ],
                 filters: [
-                    ["createfrom", "is", createFrom],
+                    ["createfrom", "is", createFromText],
                     "AND", ["systemnotes.newvalue", "is", "Shipped"],
                     "AND", ["mainline", "is", "T"]
                 ]
