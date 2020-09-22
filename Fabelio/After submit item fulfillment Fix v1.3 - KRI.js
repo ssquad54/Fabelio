@@ -97,7 +97,6 @@ define(['N/record', 'N/search', 'N/transaction'],
             var saveSO = soShippedCount.save()
             log.debug("saveSO", saveSO);
 
-
             if (oldShipStatus == 'Shipped' && newShipStatus == 'Packed') { // Start - If old status = Shipped and New Status: Packed
 
                 var fromRecord = search.lookupFields({ // Get Record Type from Createfrom field
@@ -215,7 +214,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                                                 });
 
                                                 creditMemo.setValue({
-                                                    fieldId: 'custbody_amount_to_apply',
+                                                    fieldId: 'custbody_kri_unapply_amount',
                                                     value: creApplyInvAmt
                                                 });
 
@@ -264,7 +263,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                                                 });
 
                                                 custPayment.setValue({
-                                                    fieldId: 'custbody_amount_to_apply',
+                                                    fieldId: 'custbody_kri_unapply_amount',
                                                     value: custPymtApplyInvAmt
                                                 });
 
@@ -295,7 +294,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                     }
                 } // End - If Create From Sales Order
             } // End - If new Status: Packed
-            else if (newShipStatus == 'Shipped') {
+            else if (oldShipStatus == 'Packed' && newShipStatus == 'Shipped') {
                 //Create New Invoice Using Transform function - akan direview dulu
                 //Note : Berhubung dalam 1 SO bisa ada beberapa kali pengiriman, apakah dalam Sales order bisa ada beberapa Invoice mengikuti item fulfillment ? jika ya, perlakuannya bagaimana ? 
                 var newInvoice = record.transform({
@@ -349,7 +348,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                         });
                         log.debug("creditMemoEdit", creditMemoEdit);
 
-                        var creMemoAmtToApply = creditMemoEdit.getValue('custbody_amount_to_apply');
+                        var creMemoAmtToApply = creditMemoEdit.getValue('custbody_kri_unapply_amount');
                         log.debug("creMemoAmtToApply", creMemoAmtToApply);
 
                         var sublistLength = creditMemoEdit.getLineCount({
@@ -391,7 +390,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                         });
                         log.debug("custPymtEdit", custPymtEdit);
 
-                        var custPymtAmtToApply = custPymtEdit.getValue('custbody_amount_to_apply');
+                        var custPymtAmtToApply = custPymtEdit.getValue('custbody_kri_unapply_amount');
                         log.debug("custPymtAmtToApply", custPymtAmtToApply);
 
                         var sublistLength = custPymtEdit.getLineCount({
