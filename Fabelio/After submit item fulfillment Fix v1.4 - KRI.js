@@ -8,154 +8,163 @@
 define(['N/record', 'N/search', 'N/transaction'],
     function(record, search, transaction) {
         function beforeSubmit(context) {
-            var oldRecord;
-            var oldStatus;
-            var newRecord;
-            var newStatus;
-
-            // on Create 
             if (context.type == context.UserEventType.CREATE) {
-                newRecord = context.newRecord;
-                newStatus = newRecord.getText('shipstatus');
-                log.debug("Shipping Status", newStatus)
+                var newRecord = context.newRecord;
+                var newStatus = newRecord.getText('shipstatus');
+                log.debug("Shipping Status", newStatus);
 
-                if (newStatus == 'Shipped') {
-                    newRecord.setValue({
-                        fieldId: 'custbody_kri_shipping',
-                        value: (1).toString()
-                    });
+                var fromRecord = search.lookupFields({ // Get Record Type from Createfrom field
+                    type: search.Type.TRANSACTION,
+                    id: newRecord.getValue('createdfrom'),
+                    columns: 'recordtype'
+                });
+                log.debug("createdfrom Type", fromRecord);
 
-                    var so = record.load({
-                        type: record.Type.SALES_ORDER,
-                        id: newRecord.getValue('createdfrom')
-                    });
+                if (fromRecord.recordtype !== 'salesorder')
+                    return;
+                else {
+                    if (newStatus == 'Shipped') {
+                        newRecord.setValue({
+                            fieldId: 'custbody_kri_shipping',
+                            value: (1).toString()
+                        });
 
-                    // Search Shipping Count from all Item Fulfillment related with Sales order
-                    var soShippingSearch = search.create({
-                        type: search.Type.ITEM_FULFILLMENT,
-                        title: 'Shipping Count for SO',
-                        id: 'customsearch_shipping_count_so',
-                        columns: [
-                            search.createColumn({
-                                name: "custbody_kri_shipping"
-                            })
-                        ],
-                        filters: [
-                            ["createdfrom", "is", newRecord.getValue('createdfrom')],
-                            "AND", ["mainline", "is", "T"]
-                        ]
-                    }).run().getRange(0, 500);
+                        var so = record.load({
+                            type: record.Type.SALES_ORDER,
+                            id: newRecord.getValue('createdfrom')
+                        });
 
-                    log.debug("soShippingSearch", soShippingSearch);
+                        // Search Shipping Count from all Item Fulfillment related with Sales order
+                        var soShippingSearch = search.create({
+                            type: search.Type.ITEM_FULFILLMENT,
+                            title: 'Shipping Count for SO',
+                            id: 'customsearch_shipping_count_so',
+                            columns: [
+                                search.createColumn({
+                                    name: "custbody_kri_shipping"
+                                })
+                            ],
+                            filters: [
+                                ["createdfrom", "is", newRecord.getValue('createdfrom')],
+                                "AND", ["mainline", "is", "T"]
+                            ]
+                        }).run().getRange(0, 500);
 
-                    var soShippingCount = 1;
-                    for (var i = 0; i < soShippingSearch.length; i++) {
+                        log.debug("soShippingSearch", soShippingSearch);
 
-                        soShippingCount += Number(soShippingSearch[i].getValue('custbody_kri_shipping'));
-                        log.debug("soShippingCount", soShippingCount);
+                        var soShippingCount = 1;
+                        for (var i = 0; i < soShippingSearch.length; i++) {
+
+                            soShippingCount += Number(soShippingSearch[i].getValue('custbody_kri_shipping'));
+                            log.debug("soShippingCount", soShippingCount);
+                        }
+                        // Populate Shipping Count to Sales Order
+                        var so = record.load({
+                            type: record.Type.SALES_ORDER,
+                            id: newRecord.getValue('createdfrom')
+                        });
+
+                        so.setValue({
+                            fieldId: 'custbody_kri_shipping',
+                            value: (soShippingCount).toString()
+                        });
+
+                        var saveSO = so.save();
+                        log.debug("internalid SO", saveSO);
                     }
-                    // Populate Shipping Count to Sales Order
-                    var so = record.load({
-                        type: record.Type.SALES_ORDER,
-                        id: newRecord.getValue('createdfrom')
-                    });
+                }
+            } else if (context.type == context.UserEventType.EDIT) {
+                var oldRecord = context.oldRecord;
+                var newRecord = context.newRecord;
 
-                    so.setValue({
-                        fieldId: 'custbody_kri_shipping',
-                        value: (soShippingCount).toString()
-                    });
-
-                    var saveSO = so.save()
-                    log.debug("internalid SO", saveSO);
-                };
-            } else if (context.type !== context.UserEventType.CREATE) {
-                oldRecord = context.oldRecord;
-                newRecord = context.newRecord;
-
-                newStatus = newRecord.getText('shipstatus')
+                var newStatus = newRecord.getText('shipstatus');
                 log.debug("newStatus", newStatus);
 
-                oldStatus = oldRecord.getText('shipstatus');
+                var oldStatus = oldRecord.getText('shipstatus');
                 log.debug("oldStatus", oldStatus);
 
-                if (oldStatus == 'Shipped')
-                    return;
-                else if (newStatus == 'Shipped') {
-                    var shippingCount = newRecord.getValue({
-                        fieldId: 'custbody_kri_shipping'
-                    });
-                    log.debug("shipping Count", shippingCount);
+                var fromRecord = search.lookupFields({ // Get Record Type from Createfrom field
+                    type: search.Type.TRANSACTION,
+                    id: newRecord.getValue('createdfrom'),
+                    columns: 'recordtype'
+                });
+                log.debug("createdfrom Type", fromRecord);
 
-                    newRecord.setValue({
-                        fieldId: 'custbody_kri_shipping',
-                        value: shippingCount + 1
-                    });
+                if (fromRecord.recordtype == 'salesorder') {
 
-                    // Search Shipping Count from all Item Fulfillment related with Sales order
-                    var soShippingSearch = search.create({
-                        type: search.Type.ITEM_FULFILLMENT,
-                        title: 'Shipping Count for SO',
-                        id: 'customsearch_shipping_count_so',
-                        columns: [
-                            search.createColumn({
-                                name: "custbody_kri_shipping"
-                            })
-                        ],
-                        filters: [
-                            ["createdfrom", "is", newRecord.getValue('createdfrom')],
-                            "AND", ["mainline", "is", "T"]
-                        ]
-                    }).run().getRange(0, 500);
+                    if (oldStatus == 'Shipped')
+                        return;
+                    else if (newStatus == 'Shipped') {
+                        var shippingCount = newRecord.getValue({
+                            fieldId: 'custbody_kri_shipping'
+                        });
+                        log.debug("shipping Count", shippingCount);
 
-                    log.debug("soShippingSearch", soShippingSearch);
+                        newRecord.setValue({
+                            fieldId: 'custbody_kri_shipping',
+                            value: (Number(shippingCount) + 1).toString()
+                        });
 
-                    var soShippingCount = 1;
-                    for (var i = 0; i < soShippingSearch.length; i++) {
+                        // Search Shipping Count from all Item Fulfillment related with Sales order
+                        var soShippingSearch = search.create({
+                            type: search.Type.ITEM_FULFILLMENT,
+                            title: 'Shipping Count for SO',
+                            id: 'customsearch_shipping_count_so',
+                            columns: [
+                                search.createColumn({
+                                    name: "custbody_kri_shipping"
+                                })
+                            ],
+                            filters: [
+                                ["createdfrom", "is", newRecord.getValue('createdfrom')],
+                                "AND", ["mainline", "is", "T"]
+                            ]
+                        }).run().getRange(0, 500);
 
-                        var IFshippingCount = soShippingSearch[i].getValue('custbody_kri_shipping')
-                        log.debug("IFshippingCount", IFshippingCount);
+                        log.debug("soShippingSearch", soShippingSearch);
 
-                        soShippingCount += Number(soShippingSearch[i].getValue('custbody_kri_shipping'));
-                        log.debug("soShippingCount", soShippingCount);
+                        var soShippingCount = 1;
+                        for (var i = 0; i < soShippingSearch.length; i++) {
+
+                            var IFshippingCount = soShippingSearch[i].getValue('custbody_kri_shipping');
+                            log.debug("IFshippingCount", IFshippingCount);
+
+                            soShippingCount += Number(soShippingSearch[i].getValue('custbody_kri_shipping'));
+                            log.debug("soShippingCount", soShippingCount);
+                        }
+                        // Populate Shipping Count to Sales Order
+                        var so = record.load({
+                            type: record.Type.SALES_ORDER,
+                            id: newRecord.getValue('createdfrom')
+                        });
+
+                        so.setValue({
+                            fieldId: 'custbody_kri_shipping',
+                            value: (soShippingCount).toString()
+                        });
+
+                        var saveSO = so.save();
+                        log.debug("internalid SO", saveSO);
                     }
-                    // Populate Shipping Count to Sales Order
-                    var so = record.load({
-                        type: record.Type.SALES_ORDER,
-                        id: newRecord.getValue('createdfrom')
-                    });
-
-                    so.setValue({
-                        fieldId: 'custbody_kri_shipping',
-                        value: (soShippingCount).toString()
-                    });
-
-                    var saveSO = so.save()
-                    log.debug("internalid SO", saveSO);
                 }
             }
         }
-
+        // After Submit 
         function afterSubmit(context) {
             if (context.type !== context.UserEventType.EDIT && context.type !== context.UserEventType.SHIP)
                 return;
-
             var oldRecord = context.oldRecord;
-            log.debug("oldRecord", oldRecord);
-
             var newRecord = context.newRecord;
-            log.debug("newRecord", newRecord);
-
-            var createFrom = newRecord.getValue('createdfrom');
-            log.debug("CreateFrom", createFrom);
-
-            var createFromText = newRecord.getText('createdfrom');
-            log.debug("createFromText", createFromText);
 
             var oldShipStatus = oldRecord.getText('shipstatus');
             log.debug("oldShipStatus", oldShipStatus);
 
-            var newShipStatus = newRecord.getText('shipstatus')
+            var newShipStatus = newRecord.getText('shipstatus');
             log.debug("newShipStatus", newShipStatus);
+
+
+            var createdFrom = newRecord.getValue('createdfrom');
+            log.debug("CreateFrom", createdFrom);
 
             // Start dari sini - review variable diatas juga.
 
@@ -163,334 +172,480 @@ define(['N/record', 'N/search', 'N/transaction'],
 
                 var fromRecord = search.lookupFields({ // Get Record Type from Createfrom field
                     type: search.Type.TRANSACTION,
-                    id: createFrom,
+                    id: createdFrom,
                     columns: 'recordtype'
                 });
                 log.debug("fromType", fromRecord);
 
                 if (fromRecord.recordtype == 'salesorder') { // Start - If Create From Sales Order
-                    var loadRecord = record.load({
-                        type: record.Type.SALES_ORDER,
-                        id: createFrom
+                    var searchRecord = search.create({
+                        type: search.Type.INVOICE,
+                        title: 'Related Invoice',
+                        id: 'customsearch_related_invoice',
+                        filters: [search.createFilter({
+                                name: 'status',
+                                operator: search.Operator.NONEOF,
+                                values: 'CustInvc:V'
+                            }),
+                            search.createFilter({
+                                name: 'custbody_if_no',
+                                operator: search.Operator.IS,
+                                values: newRecord.id
+                            }),
+                            search.createFilter({
+                                name: 'mainline',
+                                operator: search.Operator.IS,
+                                values: true
+                            }),
+                        ],
+                        columns: [search.createColumn({
+                            name: "internalid",
+                            sort: search.Sort.ASC
+                        })]
+                    }).run().getRange(0, 10);
+
+                    log.debug({
+                        "title": "searchRecord",
+                        "details": searchRecord
                     });
-                    log.debug("loadRecord", loadRecord);
 
-                    var linkCount = loadRecord.getLineCount({
-                        sublistId: 'links'
+                    log.debug({
+                        "title": "searchRecord.length",
+                        "details": searchRecord.length
                     });
-                    log.debug("linkCount", linkCount);
 
-                    for (var i = 0; i < linkCount; i++) {
-                        var linkType = loadRecord.getSublistValue({
-                            sublistId: 'links',
-                            fieldId: 'type',
-                            line: i
+                    for (var i = 0; i < searchRecord.length; i++) {
+                        var invoiceSO = record.load({
+                            type: record.Type.INVOICE,
+                            id: searchRecord[i].id
                         });
-                        log.debug("linkType", linkType);
+                        log.debug("InvoiceSO", invoiceSO);
 
-                        var linkId = loadRecord.getSublistValue({
-                            sublistId: 'links',
-                            fieldId: 'id',
-                            line: i
+                        var invoiceStatus = invoiceSO.getValue({
+                            fieldId: 'status'
                         });
-                        log.debug("linkId", linkId);
+                        log.debug("invoiceStatus", invoiceStatus);
 
-                        if (linkType == 'Invoice') { // Start - If Related Record is Invoice
-                            var invoiceSO = record.load({
-                                type: record.Type.INVOICE,
-                                id: linkId
-                            });
-                            log.debug("InvoiceSO", invoiceSO);
+                        // Get Related Record Count
+                        var invLinkCount = invoiceSO.getLineCount({
+                            sublistId: 'links'
+                        });
+                        log.debug("invLinkCount", invLinkCount);
 
-                            var invoiceStatus = invoiceSO.getValue({
-                                fieldId: 'status'
-                            });
-                            log.debug("invoiceStatus", invoiceStatus);
+                        for (var j = 0; j < invLinkCount; j++) {
+                            var invLinkType = '';
+                            var invLinkId = '';
+                            try {
+                                invLinkType = invoiceSO.getSublistValue({
+                                    sublistId: 'links',
+                                    fieldId: 'type',
+                                    line: j
+                                });
+                                log.debug("invLinkType", invLinkType);
 
-                            // Get Related Record Count
-                            var invLinkCount = invoiceSO.getLineCount({
-                                sublistId: 'links'
-                            });
-                            log.debug("invLinkCount", invLinkCount);
+                                invLinkId = invoiceSO.getSublistValue({
+                                    sublistId: 'links',
+                                    fieldId: 'id',
+                                    line: j
+                                });
+                                log.debug("invLinkId", invLinkId);
 
-                            for (var j = 0; j < linkCount; j++) {
-                                var invLinkType = '';
-                                var invLinkId = '';
-                                try {
-                                    invLinkType = invoiceSO.getSublistValue({
-                                        sublistId: 'links',
-                                        fieldId: 'type',
-                                        line: j
+                                var invLinkTranId = invoiceSO.getSublistValue({
+                                    sublistId: 'links',
+                                    fieldId: 'tranid',
+                                    line: j
+                                });
+                                log.debug("invLinkTranId", invLinkTranId);
+
+                                if (invLinkType == 'Deposit Application') { // Start -  if Deposit Application - unapply InvoiceSO
+                                    var deleteDepApp = record.delete({
+                                        type: record.Type.DEPOSIT_APPLICATION,
+                                        id: invLinkId
                                     });
-                                    log.debug("invLinkType", invLinkType);
-
-                                    invLinkId = invoiceSO.getSublistValue({
-                                        sublistId: 'links',
-                                        fieldId: 'id',
-                                        line: j
+                                    log.debug("deleteDepApp", deleteDepApp);
+                                } else if (invLinkType == 'Credit Memo') { // Start - if Credit Memo - Uncheck apply invoiceSO
+                                    var creditMemo = record.load({
+                                        type: record.Type.CREDIT_MEMO,
+                                        id: invLinkId
                                     });
-                                    log.debug("invLinkId", invLinkId);
+                                    log.debug("creditMemo", creditMemo);
 
-                                    if (invLinkType == 'Deposit Application') { // Start -  if Deposit Application - unapply InvoiceSO
-                                        var deleteDepApp = record.delete({
-                                            type: record.Type.DEPOSIT_APPLICATION,
-                                            id: invLinkId
-                                        });
-                                        log.debug("deleteDepApp", deleteDepApp);
-                                    } else if (invLinkType == 'Credit Memo') { // Start - if Credit Memo - Uncheck apply invoiceSO
-                                        var creditMemo = record.load({
-                                            type: record.Type.CREDIT_MEMO,
-                                            id: invLinkId
-                                        });
-                                        log.debug("creditMemo", creditMemo);
+                                    var creditMemoTranId = creditMemo.getValue({
+                                        fieldId: 'tranid',
+                                    });
+                                    log.debug("creditMemoTranId", creditMemoTranId);
 
-                                        var creditMemoTranId = creditMemo.getValue({
-                                            fieldId: 'tranid',
-                                        });
-                                        log.debug("creditMemoTranId", creditMemoTranId);
+                                    var sublistLength = creditMemo.getLineCount({
+                                        sublistId: 'apply'
+                                    });
+                                    log.debug("sublistLength", sublistLength);
 
-                                        var sublistLength = creditMemo.getLineCount({
-                                            sublistId: 'apply'
+                                    for (var x = 0; x < sublistLength; x++) {
+                                        var creApplyInv = creditMemo.getSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'internalid',
+                                            line: x
                                         });
-                                        log.debug("sublistLength", sublistLength);
+                                        log.debug("creApplyInv", creApplyInv);
 
-                                        for (var x = 0; x < sublistLength; x++) {
-                                            var creApplyInv = creditMemo.getSublistValue({
+                                        if (creApplyInv == invoiceSO.id) {
+                                            var creApplyInvAmt = creditMemo.getSublistValue({
                                                 sublistId: 'apply',
-                                                fieldId: 'internalid',
+                                                fieldId: 'amount',
                                                 line: x
                                             });
-                                            log.debug("creApplyInv", creApplyInv);
+                                            log.debug("creApplyInvAmt", creApplyInvAmt);
 
-                                            if (creApplyInv == linkId) {
-                                                var creApplyInvAmt = creditMemo.getSublistValue({
-                                                    sublistId: 'apply',
-                                                    fieldId: 'amount',
-                                                    line: x
-                                                });
-                                                log.debug("creApplyInvAmt", creApplyInvAmt);
-
-                                                creditMemo.setValue({
-                                                    fieldId: 'custbody_kri_unapply',
-                                                    value: createFromText
-                                                });
-
-                                                creditMemo.setValue({
-                                                    fieldId: 'custbody_kri_unapply_amount',
-                                                    value: creApplyInvAmt
-                                                });
-
-                                                creditMemo.setSublistValue({
-                                                    sublistId: 'apply',
-                                                    fieldId: 'apply',
-                                                    line: x,
-                                                    value: false
-                                                });
-                                            }
-                                        }
-                                        var saveCreMemo = creditMemo.save()
-                                        log.debug("saveCreMemo", saveCreMemo);
-                                    } // End - if Credit Memo - Uncheck apply invoiceSO
-                                    else if (invLinkType == 'Payment') { //  Start - if Payment - Uncheck Apply InvoiceSO
-                                        var custPayment = record.load({
-                                            type: record.Type.CUSTOMER_PAYMENT,
-                                            id: invLinkId
-                                        });
-                                        log.debug("custPayment", custPayment);
-
-                                        var CustPymtSublistLength = custPayment.getLineCount({
-                                            sublistId: 'apply'
-                                        });
-                                        log.debug("CustPymtSublistLength", CustPymtSublistLength);
-
-                                        for (var z = 0; z < CustPymtSublistLength; z++) {
-                                            var custPymtApplyInv = custPayment.getSublistValue({
+                                            creditMemo.setSublistValue({
                                                 sublistId: 'apply',
-                                                fieldId: 'internalid',
+                                                fieldId: 'apply',
+                                                line: x,
+                                                value: false
+                                            });
+                                        }
+                                    }
+                                    var saveCreMemo = creditMemo.save();
+                                    log.debug("saveCreMemo", saveCreMemo);
+
+                                    var searchCreditUsage = search.create({
+                                        type: 'CUSTOMRECORD_STORE_CREDIT_USAGE',
+                                        title: 'Related Saved Search',
+                                        id: 'customsearch_related_saved_search',
+                                        filters: [
+                                            ["custrecord_scu_credit_memo_id", "is", creditMemoTranId],
+                                            "AND", ["custrecord_scu_sales_order_id", "is", createdFrom]
+                                        ],
+                                        columns: [search.createColumn({
+                                            name: "internalid",
+                                            sort: search.Sort.ASC
+                                        })]
+                                    }).run().getRange(0, 10);
+
+                                    log.debug({
+                                        "title": "searchCreditUsage",
+                                        "details": searchCreditUsage
+                                    });
+
+                                    log.debug({
+                                        "title": "searchCreditUsage.length",
+                                        "details": searchCreditUsage.length
+                                    });
+
+                                    for (var u = 0, max = searchCreditUsage.length; u < max; u++) {
+                                        log.debug("yes", "masuk looping !!")
+                                        var creditUsage = record.load({
+                                            type: 'CUSTOMRECORD_STORE_CREDIT_USAGE',
+                                            id: searchCreditUsage[u].id
+                                        });
+
+                                        creditUsage.setValue({
+                                            fieldId: 'custrecord_scu_applied',
+                                            value: false
+                                        });
+
+                                        var saveCreditUsage = creditUsage.save();
+                                        log.debug('saveCreditUsage', saveCreditUsage);
+                                    }
+                                } // End - if Credit Memo - Uncheck apply invoiceSO
+                                else if (invLinkType == 'Payment') { //  Start - if Payment - Uncheck Apply InvoiceSO
+                                    var custPayment = record.load({
+                                        type: record.Type.CUSTOMER_PAYMENT,
+                                        id: invLinkId
+                                    });
+                                    log.debug("custPayment", custPayment);
+
+                                    var paymentTranId = custPayment.getValue({
+                                        fieldId: 'tranid'
+                                    });
+                                    log.debug("paymentTranId", paymentTranId);
+
+                                    var CustPymtSublistLength = custPayment.getLineCount({
+                                        sublistId: 'apply'
+                                    });
+                                    log.debug("CustPymtSublistLength", CustPymtSublistLength);
+
+                                    for (var z = 0; z < CustPymtSublistLength; z++) {
+                                        var custPymtApplyInv = custPayment.getSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'internalid',
+                                            line: z
+                                        });
+                                        log.debug("custPymtApplyInv", custPymtApplyInv);
+
+                                        if (custPymtApplyInv == invoiceSO.id) {
+                                            var custPymtApplyInvAmt = custPayment.getSublistValue({
+                                                sublistId: 'apply',
+                                                fieldId: 'amount',
                                                 line: z
                                             });
-                                            log.debug("custPymtApplyInv", custPymtApplyInv);
+                                            log.debug("custPymtApplyInvAmt", custPymtApplyInvAmt);
 
-                                            if (custPymtApplyInv == linkId) {
-                                                var custPymtApplyInvAmt = custPayment.getSublistValue({
-                                                    sublistId: 'apply',
-                                                    fieldId: 'amount',
-                                                    line: z
-                                                });
-                                                log.debug("custPymtApplyInvAmt", custPymtApplyInvAmt);
-
-                                                custPayment.setValue({
-                                                    fieldId: 'custbody_kri_unapply',
-                                                    value: createFromText
-                                                });
-
-                                                custPayment.setValue({
-                                                    fieldId: 'custbody_kri_unapply_amount',
-                                                    value: custPymtApplyInvAmt
-                                                });
-
-                                                custPayment.setSublistValue({
-                                                    sublistId: 'apply',
-                                                    fieldId: 'apply',
-                                                    line: z,
-                                                    value: false
-                                                });
-                                            }
+                                            custPayment.setSublistValue({
+                                                sublistId: 'apply',
+                                                fieldId: 'apply',
+                                                line: z,
+                                                value: false
+                                            });
                                         }
-                                        var saveCustPymt = custPayment.save()
-                                        log.debug("saveCustPymt", saveCustPymt);
-                                    } //  End - if Payment - Uncheck Apply InvoiceSO
-                                } catch (e) {
-                                    log.error({
-                                        title: e.name,
-                                        details: e
+                                    }
+                                    var saveCustPymt = custPayment.save();
+                                    log.debug("saveCustPymt", saveCustPymt);
+
+                                    var searchUsagePymt = search.create({
+                                        type: 'CUSTOMRECORD_STORE_CREDIT_USAGE',
+                                        title: 'Related Saved Search',
+                                        id: 'customsearch_related_saved_search',
+                                        filters: [
+                                            ["custrecord_scu_credit_memo_id", "is", paymentTranId],
+                                            "AND", ["custrecord_scu_sales_order_id", "is", createdFrom]
+                                        ],
+                                        columns: [search.createColumn({
+                                            name: "internalid",
+                                            sort: search.Sort.ASC
+                                        })]
+                                    }).run().getRange(0, 10);
+
+                                    log.debug({
+                                        "title": "searchUsagePymt",
+                                        "details": searchUsagePymt
                                     });
-                                }
+
+                                    log.debug({
+                                        "title": "searchUsagePymt.length",
+                                        "details": searchUsagePymt.length
+                                    });
+
+                                    for (var o = 0, max = searchUsagePymt.length; o < max; o++) {
+                                        log.debug("yes", "masuk looping !!")
+                                        var creditUsage = record.load({
+                                            type: 'CUSTOMRECORD_STORE_CREDIT_USAGE',
+                                            id: searchUsagePymt[o].id
+                                        });
+
+                                        creditUsage.setValue({
+                                            fieldId: 'custrecord_scu_applied',
+                                            value: false
+                                        });
+
+                                        var saveCreditUsage = creditUsage.save();
+                                        log.debug('saveCreditUsage', saveCreditUsage);
+                                    }
+                                } //  End - if Payment - Uncheck Apply InvoiceSO
+                            } catch (e) {
+                                log.error({
+                                    title: e.name,
+                                    details: e
+                                });
                             }
-                            var voidInvoice = transaction.void({
-                                type: transaction.Type.INVOICE,
-                                id: linkId
-                            });
-                            log.debug("voidInvoice", voidInvoice);
-                        } // End - If Related Record is Invoice
+                        }
+                        var voidInvoice = transaction.void({
+                            type: transaction.Type.INVOICE,
+                            id: invoiceSO.id
+                        });
+                        log.debug("voidInvoice", voidInvoice);
                     }
                 } // End - If Create From Sales Order
             } // End - If new Status: Packed
-            else if (oldShipStatus == 'Packed' && newShipStatus == 'Shipped') {
+            else if ((oldShipStatus == 'Packed' || oldShipStatus == 'Picked') && newShipStatus == 'Shipped') {
                 //Create New Invoice Using Transform function - akan direview dulu
                 //Note : Berhubung dalam 1 SO bisa ada beberapa kali pengiriman, apakah dalam Sales order bisa ada beberapa Invoice mengikuti item fulfillment ? jika ya, perlakuannya bagaimana ? 
                 var newInvoice = record.transform({
-                    fromType: record.Type.SALES_ORDER,
-                    fromId: createFrom,
+                    fromType: record.Type.SALES_ORDER, //pakai Fulfillment
+                    fromId: createdFrom,
                     toType: record.Type.INVOICE,
                 });
 
-                var newInvoiceId = newInvoice.save()
+                newInvoice.setValue({
+                    fieldId: 'custbody_if_no',
+                    value: newRecord.id
+                });
+
+                var newInvoiceId = newInvoice.save();
                 log.debug("newInvoiceId", newInvoiceId);
 
-
-                /*    var newRecordTranId = newRecord.getValue({
-                       fieldId: 'tranid'
-                   });
-                   log.debug("newRecordTranId", newRecordTranId); */
-
-                //create search to find old transaction 
-                var searchRecord = search.create({
-                    type: search.Type.TRANSACTION,
-                    title: 'Related Saved Search',
-                    id: 'customsearch_related_saved_search',
+                var searchCreditUsageCM = search.create({
+                    type: 'CUSTOMRECORD_STORE_CREDIT_USAGE',
+                    title: 'Credit Usage Saved Search',
+                    id: 'customsearch_credit_usage_saved_search',
                     filters: [
-                        ["custbody_kri_unapply", "is", createFromText],
-                        "AND", ["mainline", "is", "T"]
+                        ["custrecord_scu_sales_order_id", "is", createdFrom]
                     ],
                     columns: [search.createColumn({
-                        name: "internalid",
-                        sort: search.Sort.ASC
-                    })]
-                }).run().getRange(0, 10);
+                            name: "internalid",
+                            sort: search.Sort.ASC
+                        }),
+                        "custrecord_scu_sales_order_id",
+                        "custrecord_scu_credit_memo_id",
+                        "custrecord_scu_amount_spent"
+                    ],
+                }).run().getRange(0, 100);
 
                 log.debug({
-                    "title": "searchRecord",
-                    "details": searchRecord
+                    "title": "searchCreditUsageCM",
+                    "details": searchCreditUsageCM
                 });
 
                 log.debug({
-                    "title": "searchRecord.length",
-                    "details": searchRecord.length
+                    "title": "searchCreditUsageCM.length",
+                    "details": searchCreditUsageCM.length
                 });
 
-                for (var y = 0; y < searchRecord.length; y++) {
-                    var tranType = searchRecord[y].recordType;
-                    log.debug("tranType", tranType);
+                for (var i = 0; i < searchCreditUsageCM.length; i++) {
+                    var creditUsageTranId = searchCreditUsageCM[i].getValue('custrecord_scu_credit_memo_id');
+                    log.debug("creditUsageTranId", creditUsageTranId);
 
-                    if (tranType == 'creditmemo') { // Start - If Credit Memo Apply to New Invoice
-                        var creditMemoEdit = record.load({
-                            type: record.Type.CREDIT_MEMO,
-                            id: searchRecord[y].id
-                        });
-                        log.debug("creditMemoEdit", creditMemoEdit);
+                    var cuAmount = searchCreditUsageCM[i].getValue('custrecord_scu_amount_spent');
+                    log.debug("cuAmount", cuAmount);
 
-                        var creMemoAmtToApply = creditMemoEdit.getValue('custbody_kri_unapply_amount');
-                        log.debug("creMemoAmtToApply", creMemoAmtToApply);
+                    var relatedTranType = search.create({
+                        type: search.Type.TRANSACTION,
+                        title: 'Related Saved Search',
+                        id: 'customsearch_related_saved_search',
+                        filters: [
+                            ["type", "anyof", "CustCred", "CustPymt"],
+                            "AND", ["tranid", "is", creditUsageTranId],
+                            "AND", ["mainline", "is", "T"]
+                        ],
+                        columns: [search.createColumn({
+                            name: "type",
+                            sort: search.Sort.ASC
+                        })]
+                    }).run().getRange(0, 100);
 
-                        var sublistLength = creditMemoEdit.getLineCount({
-                            sublistId: 'apply'
-                        });
-                        log.debug("sublistLength", sublistLength);
+                    log.debug({
+                        "title": "relatedTranType",
+                        "details": relatedTranType
+                    });
 
-                        for (var k = 0; k < sublistLength; k++) {
-                            var creApplyNewInv = creditMemoEdit.getSublistValue({
-                                sublistId: 'apply',
-                                fieldId: 'internalid',
-                                line: k
+                    log.debug({
+                        "title": "relatedTranType.length",
+                        "details": relatedTranType.length
+                    });
+
+                    for (var j = 0; j < relatedTranType.length; j++) {
+                        try {
+                            var recordType = relatedTranType[j].recordType;
+                            log.debug({
+                                title: "recordType",
+                                details: recordType
                             });
-                            log.debug("creApplyInv", creApplyNewInv);
 
-                            if (creApplyNewInv == newInvoiceId) {
-                                creditMemoEdit.setSublistValue({
-                                    sublistId: 'apply',
-                                    fieldId: 'apply',
-                                    line: k,
+                            if (recordType == 'creditmemo') { // Start - If Credit Memo Apply to New Invoice
+                                var creditMemoEdit = record.load({
+                                    type: record.Type.CREDIT_MEMO,
+                                    id: relatedTranType[j].id
+                                });
+                                log.debug("creditMemoEdit", creditMemoEdit);
+
+                                var loadCreditUsage = record.load({
+                                    type: 'CUSTOMRECORD_STORE_CREDIT_USAGE',
+                                    id: searchCreditUsageCM[i].id
+                                });
+
+                                loadCreditUsage.setValue({
+                                    fieldId: 'custrecord_scu_applied',
                                     value: true
                                 });
 
-                                creditMemoEdit.setSublistValue({
-                                    sublistId: 'apply',
-                                    fieldId: 'amount',
-                                    line: k,
-                                    value: creMemoAmtToApply
+                                var sublistLength = creditMemoEdit.getLineCount({
+                                    sublistId: 'apply'
                                 });
-                            }
-                        }
-                        var saveCreMemoEdit = creditMemoEdit.save()
-                        log.debug("saveCreMemoEdit", saveCreMemoEdit);
-                    } // End - if Credit Memo - apply to New Invoice
-                    else if (tranType == 'customerpayment') { // Start - If Credit Memo Apply to New Invoice
-                        var custPymtEdit = record.load({
-                            type: record.Type.CUSTOMER_PAYMENT,
-                            id: searchRecord[y].id
-                        });
-                        log.debug("custPymtEdit", custPymtEdit);
+                                log.debug("sublistLength", sublistLength);
 
-                        var custPymtAmtToApply = custPymtEdit.getValue('custbody_kri_unapply_amount');
-                        log.debug("custPymtAmtToApply", custPymtAmtToApply);
+                                for (var k = 0; k < sublistLength; k++) {
+                                    var cmApplyNewInv = creditMemoEdit.getSublistValue({
+                                        sublistId: 'apply',
+                                        fieldId: 'internalid',
+                                        line: k
+                                    });
+                                    log.debug("cmApplyNewInv", cmApplyNewInv);
 
-                        var sublistLength = custPymtEdit.getLineCount({
-                            sublistId: 'apply'
-                        });
-                        log.debug("sublistLength", sublistLength);
+                                    if (cmApplyNewInv == newInvoiceId) {
+                                        creditMemoEdit.setSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'apply',
+                                            line: k,
+                                            value: true
+                                        });
 
-                        for (var k = 0; k < sublistLength; k++) {
-                            var custPymtApplyNewInv = custPymtEdit.getSublistValue({
-                                sublistId: 'apply',
-                                fieldId: 'internalid',
-                                line: k
-                            });
-                            log.debug("custPymtApplyNewInv", custPymtApplyNewInv);
+                                        creditMemoEdit.setSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'amount',
+                                            line: k,
+                                            value: cuAmount
+                                        });
+                                    }
+                                    var saveCreMemoEdit = creditMemoEdit.save();
+                                    log.debug("saveCreMemoEdit", saveCreMemoEdit);
 
-                            if (custPymtApplyNewInv == newInvoiceId) {
-                                custPymtEdit.setSublistValue({
-                                    sublistId: 'apply',
-                                    fieldId: 'apply',
-                                    line: k,
+                                    var saveCreditUsage = loadCreditUsage.save();
+                                    log.debug("saveCreditUsage", saveCreditUsage);
+                                }
+                            } // End - if Credit Memo - apply to New Invoice
+                            else if (recordType == 'customerpayment') { // Start - If Credit Memo Apply to New Invoice
+                                var custPymtEdit = record.load({
+                                    type: record.Type.CUSTOMER_PAYMENT,
+                                    id: relatedTranType[j].id
+                                });
+                                log.debug("custPymtEdit", custPymtEdit);
+
+                                var loadCreditUsage = record.load({
+                                    type: 'CUSTOMRECORD_STORE_CREDIT_USAGE',
+                                    id: searchCreditUsageCM[i].id
+                                });
+
+                                loadCreditUsage.setValue({
+                                    fieldId: 'custrecord_scu_applied',
                                     value: true
                                 });
 
-                                custPymtEdit.setSublistValue({
-                                    sublistId: 'apply',
-                                    fieldId: 'amount',
-                                    line: k,
-                                    value: custPymtAmtToApply
+                                var sublistLength = custPymtEdit.getLineCount({
+                                    sublistId: 'apply'
                                 });
-                            }
+                                log.debug("sublistLength", sublistLength);
+
+                                for (var k = 0; k < sublistLength; k++) {
+                                    var custPymtApplyNewInv = custPymtEdit.getSublistValue({
+                                        sublistId: 'apply',
+                                        fieldId: 'internalid',
+                                        line: k
+                                    });
+                                    log.debug("custPymtApplyNewInv", custPymtApplyNewInv);
+
+                                    if (custPymtApplyNewInv == newInvoiceId) {
+                                        custPymtEdit.setSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'apply',
+                                            line: k,
+                                            value: true
+                                        });
+
+                                        custPymtEdit.setSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'amount',
+                                            line: k,
+                                            value: cuAmount
+                                        });
+                                    }
+                                }
+                                var saveCustPymt = custPymtEdit.save();
+                                log.debug("saveCustPymt", saveCustPymt);
+
+                                var saveCreditUsage = loadCreditUsage.save();
+                                log.debug("saveCreditUsage", saveCreditUsage);
+                            } // End - if Payment - apply to New Invoice
+                        } catch (e) {
+                            log.error({
+                                title: e.name,
+                                details: e
+                            });
                         }
-                        var saveCustPymt = custPymtEdit.save()
-                        log.debug("saveCustPymt", saveCustPymt);
-                    } // End - if Credit Memo - apply to New Invoice
+                    }
                 }
             }
         }
         return {
+            beforeSubmit: beforeSubmit,
             afterSubmit: afterSubmit
         };
     });
