@@ -29,11 +29,6 @@ define(['N/record', 'N/search', 'N/transaction'],
                             value: (1).toString()
                         });
 
-                        var so = record.load({
-                            type: record.Type.SALES_ORDER,
-                            id: newRecord.getValue('createdfrom')
-                        });
-
                         // Search Shipping Count from all Item Fulfillment related with Sales order
                         var soShippingSearch = search.create({
                             type: search.Type.ITEM_FULFILLMENT,
@@ -415,7 +410,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                                         "details": searchUsagePymt.length
                                     });
 
-                                    for (var o = 0, max = searchUsagePymt.length; o < max; o++) {
+                                    for (var o = 0, usageLength = searchUsagePymt.length; o < usageLength; o++) {
                                         log.debug("yes", "masuk looping !!")
                                         var creditUsage = record.load({
                                             type: 'CUSTOMRECORD_STORE_CREDIT_USAGE',
@@ -448,11 +443,16 @@ define(['N/record', 'N/search', 'N/transaction'],
             } // End - If new Status: Packed
             else if ((oldShipStatus == 'Packed' || oldShipStatus == 'Picked') && newShipStatus == 'Shipped') {
                 //Create New Invoice Using Transform function - akan direview dulu
-                //Note : Berhubung dalam 1 SO bisa ada beberapa kali pengiriman, apakah dalam Sales order bisa ada beberapa Invoice mengikuti item fulfillment ? jika ya, perlakuannya bagaimana ? 
+
+                var lineCount = newRecord.getLineCount({
+                    sublistId: 'item'
+                });
+
                 var newInvoice = record.transform({
                     fromType: record.Type.SALES_ORDER, //pakai Fulfillment
                     fromId: createdFrom,
                     toType: record.Type.INVOICE,
+                    isDynamic: true
                 });
 
                 newInvoice.setValue({
@@ -460,6 +460,111 @@ define(['N/record', 'N/search', 'N/transaction'],
                     value: newRecord.id
                 });
 
+                var invLineCount = newInvoice.getLineCount({
+                    sublistId: 'item'
+                });
+
+                for (var i = 0; i < lineCount; i++) {
+                    var fulfillItem = newRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'item',
+                        line: i
+                    });
+                    log.debug({
+                        title: "fulfillItem",
+                        details: fulfillItem
+                    });
+
+                    var fulfillQty = newRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'quantity',
+                        line: i
+                    });
+                    log.debug({
+                        title: "fulfillQty",
+                        details: fulfillQty
+                    });
+
+                    var inventoryDetail = newRecord.getSublistSubrecord({
+                        sublistId: 'item',
+                        fieldId: 'inventorydetail',
+                        line: i
+                    });
+
+                    var serialLineCount = inventoryDetail.getLineCount({
+                        sublistId: 'inventoryassignment'
+                    });
+
+                    for (var serialLine = 0; serialLine < serialLineCount; serialLine++) {
+                        var serialNumber = inventoryDetail.getSublistValue({
+                            sublistId: 'inventoryassignment',
+                            fieldId: 'issueinventorynumber',
+                            line: serialLine
+                        });
+
+                        var serialBin = inventoryDetail.getSublistValue({
+                            sublistId: 'inventoryassignment',
+                            fieldId: 'binnumber',
+                            line: serialLine
+                        });
+
+                        var serialQty = inventoryDetail.getSublistValue({
+                            sublistId: 'inventoryassignment',
+                            fieldId: 'quantity',
+                            line: serialLine
+                        });
+
+                        log.debug({
+                            title: "inventory Detail",
+                            details: "Serial : " + serialNumber + ", Bin : " + serialBin + ", Quantity : " + serialQty
+                        });
+
+                        for (var invLine = 0; invLine < invLineCount; invLine++) {
+
+                            newInvoice.selectLine({
+                                sublistId: 'item',
+                                line: invLine
+                            });
+
+                            var invItem = newInvoice.getCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'item'
+                            });
+                            log.debug({
+                                title: 'invItem',
+                                details: invItem
+                            });
+
+                            if (fulfillItem == invItem) {
+                                newInvoice.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'quantity',
+                                    value: fulfillQty
+                                });
+
+                                var invSerialNumber = newInvoice.getCurrentSublistSubrecord({
+                                    sublistId: 'item',
+                                    fieldId: 'inventorydetail'
+                                });
+                                log.debug({
+                                    title: 'invSerialNumber',
+                                    details: invSerialNumber
+                                });
+
+                                newInvoice.commitLine({
+                                    sublistId: 'item'
+                                });
+
+                            } else if (fulfillItem !== invItem) {
+                                newInvoice.removeLine({
+                                    sublistId: 'item',
+                                    line: invLine,
+                                    ignoreRecalc: false
+                                });
+                            }
+                        }
+                    }
+                }
                 var newInvoiceId = newInvoice.save();
                 log.debug("newInvoiceId", newInvoiceId);
 
@@ -522,9 +627,9 @@ define(['N/record', 'N/search', 'N/transaction'],
                         "details": relatedTranType.length
                     });
 
-                    for (var j = 0; j < relatedTranType.length; j++) {
+                    for (var CMid = 0; CMid < relatedTranType.length; CMid++) {
                         try {
-                            var recordType = relatedTranType[j].recordType;
+                            var recordType = relatedTranType[CMid].recordType;
                             log.debug({
                                 title: "recordType",
                                 details: recordType
@@ -533,7 +638,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                             if (recordType == 'creditmemo') { // Start - If Credit Memo Apply to New Invoice
                                 var creditMemoEdit = record.load({
                                     type: record.Type.CREDIT_MEMO,
-                                    id: relatedTranType[j].id
+                                    id: relatedTranType[CMid].id
                                 });
                                 log.debug("creditMemoEdit", creditMemoEdit);
 
@@ -585,7 +690,7 @@ define(['N/record', 'N/search', 'N/transaction'],
                             else if (recordType == 'customerpayment') { // Start - If Credit Memo Apply to New Invoice
                                 var custPymtEdit = record.load({
                                     type: record.Type.CUSTOMER_PAYMENT,
-                                    id: relatedTranType[j].id
+                                    id: relatedTranType[CMid].id
                                 });
                                 log.debug("custPymtEdit", custPymtEdit);
 
@@ -604,11 +709,11 @@ define(['N/record', 'N/search', 'N/transaction'],
                                 });
                                 log.debug("sublistLength", sublistLength);
 
-                                for (var k = 0; k < sublistLength; k++) {
+                                for (var custPymtLine = 0; custPymtLine < sublistLength; custPymtLine++) {
                                     var custPymtApplyNewInv = custPymtEdit.getSublistValue({
                                         sublistId: 'apply',
                                         fieldId: 'internalid',
-                                        line: k
+                                        line: custPymtLine
                                     });
                                     log.debug("custPymtApplyNewInv", custPymtApplyNewInv);
 
@@ -616,14 +721,14 @@ define(['N/record', 'N/search', 'N/transaction'],
                                         custPymtEdit.setSublistValue({
                                             sublistId: 'apply',
                                             fieldId: 'apply',
-                                            line: k,
+                                            line: custPymtLine,
                                             value: true
                                         });
 
                                         custPymtEdit.setSublistValue({
                                             sublistId: 'apply',
                                             fieldId: 'amount',
-                                            line: k,
+                                            line: custPymtLine,
                                             value: cuAmount
                                         });
                                     }
