@@ -542,14 +542,14 @@ define(['N/record', 'N/search', 'N/transaction'],
                                     value: fulfillQty
                                 });
 
-                                var invSerialNumber = newInvoice.getCurrentSublistSubrecord({
+                                /* var invSerialNumber = newInvoice.getCurrentSublistSubrecord({
                                     sublistId: 'item',
                                     fieldId: 'inventorydetail'
                                 });
                                 log.debug({
                                     title: 'invSerialNumber',
                                     details: invSerialNumber
-                                });
+                                }); */
 
                                 newInvoice.commitLine({
                                     sublistId: 'item'
