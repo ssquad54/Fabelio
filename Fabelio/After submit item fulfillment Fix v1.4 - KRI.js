@@ -460,10 +460,6 @@ define(['N/record', 'N/search', 'N/transaction'],
                     value: newRecord.id
                 });
 
-                var invLineCount = newInvoice.getLineCount({
-                    sublistId: 'item'
-                });
-
                 for (var i = 0; i < lineCount; i++) {
                     var fulfillItem = newRecord.getSublistValue({
                         sublistId: 'item',
@@ -485,86 +481,107 @@ define(['N/record', 'N/search', 'N/transaction'],
                         details: fulfillQty
                     });
 
-                    var inventoryDetail = newRecord.getSublistSubrecord({
-                        sublistId: 'item',
-                        fieldId: 'inventorydetail',
-                        line: i
+                    /*     var inventoryDetail = newRecord.getSublistSubrecord({
+                             sublistId: 'item',
+                             fieldId: 'inventorydetail',
+                             line: i
+                         });
+     
+                         var serialLineCount = inventoryDetail.getLineCount({
+                             sublistId: 'inventoryassignment'
+                         });
+     
+                          for (var serialLine = 0; serialLine < serialLineCount; serialLine++) {
+                             var serialNumber = inventoryDetail.getSublistValue({
+                                 sublistId: 'inventoryassignment',
+                                 fieldId: 'issueinventorynumber',
+                                 line: serialLine
+                             });
+     
+                             var serialBin = inventoryDetail.getSublistValue({
+                                 sublistId: 'inventoryassignment',
+                                 fieldId: 'binnumber',
+                                 line: serialLine
+                             });
+     
+                             var serialQty = inventoryDetail.getSublistValue({
+                                 sublistId: 'inventoryassignment',
+                                 fieldId: 'quantity',
+                                 line: serialLine
+                             });
+     
+                             log.debug({
+                                 title: "inventory Detail",
+                                 details: "Serial : " + serialNumber + ", Bin : " + serialBin + ", Quantity : " + serialQty
+                             }); */
+
+                    var invLineCount = newInvoice.getLineCount({
+                        sublistId: 'item'
+                    });
+                    log.debug({
+                        title: "invLineCount",
+                        details: invLineCount
                     });
 
-                    var serialLineCount = inventoryDetail.getLineCount({
-                        sublistId: 'inventoryassignment'
-                    });
+                    var invLine = 0;
 
-                    for (var serialLine = 0; serialLine < serialLineCount; serialLine++) {
-                        var serialNumber = inventoryDetail.getSublistValue({
-                            sublistId: 'inventoryassignment',
-                            fieldId: 'issueinventorynumber',
-                            line: serialLine
+                    while (invLine <= (invLineCount - 1)) {
+                        newInvoice.selectLine({
+                            sublistId: 'item',
+                            line: invLine
                         });
 
-                        var serialBin = inventoryDetail.getSublistValue({
-                            sublistId: 'inventoryassignment',
-                            fieldId: 'binnumber',
-                            line: serialLine
+                        var invItem = newInvoice.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item'
                         });
-
-                        var serialQty = inventoryDetail.getSublistValue({
-                            sublistId: 'inventoryassignment',
-                            fieldId: 'quantity',
-                            line: serialLine
-                        });
-
                         log.debug({
-                            title: "inventory Detail",
-                            details: "Serial : " + serialNumber + ", Bin : " + serialBin + ", Quantity : " + serialQty
+                            title: 'invItem',
+                            details: invItem
                         });
 
-                        for (var invLine = 0; invLine < invLineCount; invLine++) {
-
-                            newInvoice.selectLine({
+                        if (fulfillItem !== invItem) {
+                            newInvoice.removeLine({
                                 sublistId: 'item',
-                                line: invLine
-                            });
-
-                            var invItem = newInvoice.getCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'item'
+                                line: invLine,
                             });
                             log.debug({
-                                title: 'invItem',
-                                details: invItem
+                                title: "Remove",
+                                details: "Success Remove !"
+                            })
+
+                            invLineCount = newInvoice.getLineCount({
+                                sublistId: 'item'
+                            });
+                            log.debug({
+                                title: "New Line Count",
+                                details: invLineCount
                             });
 
-                            if (fulfillItem == invItem) {
-                                newInvoice.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'quantity',
-                                    value: fulfillQty
-                                });
+                        } else {
+                            newInvoice.setCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'quantity',
+                                value: fulfillQty
+                            });
 
-                                /* var invSerialNumber = newInvoice.getCurrentSublistSubrecord({
-                                    sublistId: 'item',
-                                    fieldId: 'inventorydetail'
-                                });
-                                log.debug({
-                                    title: 'invSerialNumber',
-                                    details: invSerialNumber
-                                }); */
+                            /* var invSerialNumber = newInvoice.getCurrentSublistSubrecord({
+                                sublistId: 'item',
+                                fieldId: 'inventorydetail'
+                            });
+                            log.debug({
+                                title: 'invSerialNumber',
+                                details: invSerialNumber
+                            }); */
 
-                                newInvoice.commitLine({
-                                    sublistId: 'item'
-                                });
-
-                            } else if (fulfillItem !== invItem) {
-                                newInvoice.removeLine({
-                                    sublistId: 'item',
-                                    line: invLine,
-                                    ignoreRecalc: false
-                                });
-                            }
+                            newInvoice.commitLine({
+                                sublistId: 'item'
+                            });
+                            invLine++
                         }
                     }
                 }
+                //     }
                 var newInvoiceId = newInvoice.save();
                 log.debug("newInvoiceId", newInvoiceId);
 
@@ -573,7 +590,8 @@ define(['N/record', 'N/search', 'N/transaction'],
                     title: 'Credit Usage Saved Search',
                     id: 'customsearch_credit_usage_saved_search',
                     filters: [
-                        ["custrecord_scu_sales_order_id", "is", createdFrom]
+                        ["custrecord_scu_sales_order_id", "is", createdFrom],
+                        "AND", ["custrecord_scu_applied", "is", "F"]
                     ],
                     columns: [search.createColumn({
                             name: "internalid",
@@ -680,12 +698,12 @@ define(['N/record', 'N/search', 'N/transaction'],
                                             value: cuAmount
                                         });
                                     }
-                                    var saveCreMemoEdit = creditMemoEdit.save();
-                                    log.debug("saveCreMemoEdit", saveCreMemoEdit);
-
-                                    var saveCreditUsage = loadCreditUsage.save();
-                                    log.debug("saveCreditUsage", saveCreditUsage);
                                 }
+                                var saveCreMemoEdit = creditMemoEdit.save();
+                                log.debug("saveCreMemoEdit", saveCreMemoEdit);
+
+                                var saveCreditUsage = loadCreditUsage.save();
+                                log.debug("saveCreditUsage", saveCreditUsage);
                             } // End - if Credit Memo - apply to New Invoice
                             else if (recordType == 'customerpayment') { // Start - If Credit Memo Apply to New Invoice
                                 var custPymtEdit = record.load({
