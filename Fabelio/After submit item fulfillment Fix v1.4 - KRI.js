@@ -8,6 +8,7 @@
 define(['N/record', 'N/search', 'N/transaction'],
     function(record, search, transaction) {
         function beforeSubmit(context) {
+            log.debug("type", context.type);
             if (context.type == context.UserEventType.CREATE) {
                 var newRecord = context.newRecord;
                 var newStatus = newRecord.getText('shipstatus');
@@ -68,9 +69,11 @@ define(['N/record', 'N/search', 'N/transaction'],
                         log.debug("internalid SO", saveSO);
                     }
                 }
-            } else if (context.type == context.UserEventType.EDIT) {
+            } else if (context.type == context.UserEventType.EDIT || context.type == context.UserEventType.SHIP) {
                 var oldRecord = context.oldRecord;
                 var newRecord = context.newRecord;
+
+                log.debug("type", context.type);
 
                 var newStatus = newRecord.getText('shipstatus');
                 log.debug("newStatus", newStatus);
