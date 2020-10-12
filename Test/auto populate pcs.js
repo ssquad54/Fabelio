@@ -3,41 +3,29 @@
  * @NScriptType ClientScript
  */
 define(['N/currentRecord'], function(currentrecord) {
-    /**
-     * Function to be executed after page is initialized.
-     *
-     * @param {Object} scriptContext
-     * @param {Record} scriptContext.currentRecord - Current form record
-     * @param {string} scriptContext.mode - The mode in which the record is being accessed (create, copy, or edit)
-     *
-     * @since 2015.2
-     */
-
     function validateLine(context) {
         var currentRecord = context.currentRecord;
 
-        var inventoryDetail = currentRecord.getCurrentSublistSubrecord({
+        var invdetail = currentRecord.getCurrentSublistSubrecord({
             sublistId: 'item',
             fieldId: 'inventorydetail'
         });
 
-        var lotNumber = inventoryDetail.getLineCount({
-            sublistId: 'inventoryassignment',
-            fieldId: 'issueinventorynumber'
+        var count = invdetail.getLineCount({
+            sublistId: 'inventoryassignment'
         });
 
+        // "custcol_bmpt_pcs" is the Script Id of the Custom Transaction Line Field
         currentRecord.setCurrentSublistValue({
             sublistId: 'item',
             fieldId: 'custcol_bmpt_pcs',
-            value: lotNumber
+            value: count
         });
 
         log.debug({
-            title: 'Success',
-            details: 'Pcs successfully insert'
+            title: 'Success !!',
+            details: 'This item have' + count + ' PCS'
         });
-
-        return true;
     }
 
     return {

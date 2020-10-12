@@ -66,11 +66,10 @@ define(['N/currentRecord', 'N/error', 'N/log'], function(currentrecord, error, l
                     line: i,
                     value: lotNumber
                 });
-            };
-        };
-
+            }
+        }
         return true;
-    };
+    }
 
     return {
         //       validateLine: validateLine,
