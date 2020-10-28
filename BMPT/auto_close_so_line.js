@@ -13,19 +13,24 @@ define(['N/record'], function(record) {
         for (var i = 0; i < salesOrder.getLineCount({ sublistId: 'item' }); i++) {
             var backOrder = salesOrder.getSublistValue({
                 sublistId: 'item',
-                fieldId: 'backordered',
+                fieldId: 'quantitybackordered',
                 line: i
             });
-            if (backOrder == 0 && backOrder == null) {
+            log.debug({
+                title: "back order Qty",
+                details: backOrder
+            });
+
+            if (backOrder == 0) {
                 salesOrder.setSublistValue({
                     sublistId: 'item',
                     fieldId: 'isclosed',
-                    line: i,
-                    value: true
+                    value: true,
+                    line: i
                 });
             }
         }
-        salesOrder.save({ ignoreMandatoryFields: true });
+        salesOrder.save();
     }
     return {
         each: each
