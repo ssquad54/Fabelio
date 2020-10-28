@@ -7,6 +7,10 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
         if (context.type !== context.UserEventType.CREATE)
             return;
         var billPayment = context.newRecord;
+        log.debug({
+            title: "bill Payment",
+            details: billPayment
+        });
 
         var tranDate;
         var dueDate;
@@ -56,7 +60,7 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
             var differenceInDays = (dueDate.getTime() - tranDate.getTime()) / (1000 * 60 * 60 * 24);
             log.debug({
                 title: "difference Days",
-                details: differenceInDays + "fixed is" + differenceInDays.toFixed()
+                details: differenceInDays + " fixed is " + differenceInDays.toFixed()
             });
 
             var discountTotal = (differenceInDays.toFixed() / 90) * (3.6 / 100) * totalPayment;
@@ -78,6 +82,16 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
             invoice.setValue({ // Set Entity Value to 25 - BENTARA SINAR PRIMA, PT
                 fieldId: 'entity',
                 value: 25
+            });
+
+            invoice.setValue({
+                fieldId: 'trandate',
+                value: tranDate
+            });
+
+            invoice.setValue({
+                fieldId: 'custbody_bmpt_bill_payment',
+                value: billPayment.id
             });
 
             invoice.setValue({
@@ -132,7 +146,24 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
 
             log.debug({
                 title: "Create Invoice",
-                details: "Success !"
+                details: invoice
+            });
+
+            var updateBillPymt = record.load({
+                type: record.Type.VENDOR_PAYMENT,
+                id: billPayment.id
+            });
+
+            updateBillPymt.setValue({
+                fieldId: 'custbody_bmpt_invoice',
+                value: invoice.id
+            });
+
+            updateBillPymt.save();
+
+            log.debug({
+                title: "Set Nomor Invoice",
+                details: "Success !!"
             });
         }
 
