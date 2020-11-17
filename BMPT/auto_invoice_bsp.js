@@ -24,7 +24,7 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
             details: vendorId
         });
 
-        if (vendorId == 24) { // vendorId : 24 - BENTARA SINAR PRIMA, PT
+        if (vendorId == 29) { // vendorId : 24 - BENTARA SINAR PRIMA, PT
             tranDate = billPayment.getValue({
                 fieldId: 'trandate'
             });
