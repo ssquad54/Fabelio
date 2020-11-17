@@ -5,7 +5,8 @@
 define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
     function validateLine(scriptContext) {
 
-        var serialno = [];
+        var itemDetail;
+        var inventorydetail = [];
         var cnt = '';
 
         var warehouse = scriptContext.currentRecord.getValue({
@@ -46,44 +47,58 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
 
                 var qty = invdetail.getCurrentSublistValue({
                     sublistId: 'inventoryassignment',
-                    fieldId: 'issueinventorynumber'
+                    fieldId: 'quantity'
                 });
                 log.debug("qty", qty);
 
-                serialno.push({
-                    "lotNumber": id,
-                    "lotQty": qty
-                });
-                log.debug("serialno", serialno);
+                inventorydetail.push({ "issueinventorynumber": parseInt(id), "quantity": qty });
+                log.debug("inventorydetail", inventorydetail);
+                log.debug("inventorydetail", JSON.stringify(inventorydetail));
+                log.debug("inventorydetail.length", inventorydetail.length);
             }
         }
+        scriptContext.currentRecord.setCurrentSublistValue({
+            sublistId: 'item',
+            fieldId: 'custcol_bmpt_pcs',
+            value: cnt
+        });
+
+        scriptContext.currentRecord.setCurrentSublistValue({
+            sublistId: 'item',
+            fieldId: 'custcol_warehouse',
+            value: itemWarehouse
+        });
 
         if (itemWarehouse != warehouse && createTrfOrd == false) {
             dialog.alert({ // Alert jika terjadi error
-                title: "warehouse Beda",
+                title: "Alert!",
                 message: "Anda Memilih Warehouse Yang Berbeda. Pastikan Field " + "\"CREATE TRANSFER ORDER\"".bold() + " Tercentang jika Ingin dilakukan Transfer Order!"
             });
             log.debug("Alert", "Alert displayed successfully");
             return false;
         } else if (itemWarehouse == warehouse && createTrfOrd == true) {
             dialog.alert({ // Alert jika terjadi error
-                title: "Warehouse Sama",
+                title: "Alert!",
                 message: "Anda Memilih Warehouse Yang Sama. Pastikan Field " + "\"CREATE TRANSFER ORDER\"".bold() + " Tidak Tercentang!"
             });
             log.debug("Alert", "Alert displayed successfully");
             return false;
-        } else if (itemWarehouse != warehouse && createTrfOrd == true) {
+        } else if (itemWarehouse != warehouse && createTrfOrd == true && cnt == 0) {
+            dialog.alert({ // Alert jika terjadi error
+                title: "Alert!",
+                message: "Pastikan " + "\"Inventory Detail\"".bold() + " Dipilih!"
+            });
+            log.debug("Alert", "Alert displayed successfully");
+            return false;
+        } else if (itemWarehouse != warehouse && createTrfOrd == true && cnt > 0) {
             scriptContext.currentRecord.setCurrentSublistValue({
                 sublistId: 'item',
                 fieldId: 'custcol_lot_number_detail',
-                value: JSON.stringify(serialno)
+                value: JSON.stringify(inventorydetail)
             });
 
-            scriptContext.currentRecord.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'custcol_bmpt_pcs',
-                value: cnt
-            });
+            return true;
+        } else {
             return true;
         }
     }

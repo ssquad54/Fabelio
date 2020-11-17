@@ -17,13 +17,30 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
         });
 
         for (var u = 0; u < lineCount; u++) {
-            var itemWarehouse = currentRecord.getSublistValue({
+            var createTO = currentRecord.getSublistValue({
                 sublistId: 'item',
-                fieldId: 'location',
+                fieldId: 'custcol_create_to',
                 line: u
             });
+            log.debug('createTO', createTO);
 
-            if (itemWarehouse != warehouse) {
+            if (createTO == true) {
+                var hasSublist = currentRecord.hasSublistSubrecord({
+                    sublistId: 'item',
+                    fieldId: 'inventorydetail',
+                    line: u
+                });
+
+                log.debug('hasSublist', hasSublist);
+
+                if (hasSublist) {
+                    currentRecord.removeSublistSubrecord({
+                        sublistId: 'item',
+                        fieldId: 'inventorydetail',
+                        line: u
+                    });
+                }
+
                 currentRecord.setSublistValue({
                     sublistId: 'item',
                     fieldId: 'location',
@@ -107,15 +124,15 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
                 log.debug("lotDetail", lotDetail.toString());
 
                 itemArray.push({
-                    location: itemWarehouse.substring(1),
-                    item: itemName,
+                    location: parseInt(itemWarehouse.substring(1)),
+                    item: parseInt(itemName),
                     quantity: itemQty,
                     inventorydetail: JSON.parse(lotDetail)
                 });
-
-                log.debug('itemArray', itemArray);
             }
         }
+        log.debug('itemArray', itemArray);
+        log.debug('itemArray.length', itemArray.length);
         var keys = Object.keys(warehouseArray);
         var olen = keys.length;
         log.debug('warehouse array list', keys);
@@ -127,7 +144,7 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
                 var warehouse_id = key.substring(1); //remove the '_';
                 log.debug('DEBUG', o + '. warehouse warehouse_id:' + warehouse_id);
 
-                // this is the special syntax to setup the po with a target vendor and link it to the SO
+                // this is the special syntax to setup the to with a target warehouse and link it to the SO
                 var tranOrd = record.create({
                     type: record.Type.TRANSFER_ORDER,
                     isDynamic: true
@@ -190,67 +207,74 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
 
                 for (var x = 0; x < itemArray.length; x++) {
                     var sublistLine = itemArray[x];
-                    for (var itemKeys in sublistLine) {
-                        if (sublistLine.hasOwnProperty(itemKeys)) {
-                            if (itemKeys == 'location') {
-                                log.debug("item warehouse", sublistLine[itemKeys]);
-                                if (warehouse_id === sublistLine[itemKeys]) {
-                                    tranOrd.selectNewLine({
-                                        sublistId: 'item'
+
+                    if (warehouse_id == sublistLine.location) {
+                        for (var itemKeys in sublistLine) {
+                            if (sublistLine.hasOwnProperty(itemKeys)) {
+                                tranOrd.selectNewLine({
+                                    sublistId: 'item'
+                                });
+
+                                if (itemKeys == 'item') {
+                                    log.debug("item", sublistLine[itemKeys]);
+                                    tranOrd.setCurrentSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: itemKeys,
+                                        value: sublistLine[itemKeys],
+                                        ignoreFieldChange: false
                                     });
-                                }
-                            } else if (itemKeys == 'item') {
-                                log.debug("item", sublistLine[itemKeys]);
-                                tranOrd.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: itemKeys,
-                                    value: sublistLine[itemKeys],
-                                    ignoreFieldChange: false
-                                });
-                            } else if (itemKeys == 'quantity') {
-                                tranOrd.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: itemKeys,
-                                    value: sublistLine[itemKeys],
-                                    ignoreFieldChange: false
-                                });
-                            } else if (itemKeys == 'inventorydetail' && sublistLine.hasOwnProperty(itemKeys)) {
-                                var dataLot = sublistLine[itemKeys];
+                                } else if (itemKeys == 'quantity') {
+                                    log.debug("quantity", sublistLine[itemKeys]);
+                                    tranOrd.setCurrentSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: itemKeys,
+                                        value: sublistLine[itemKeys],
+                                        ignoreFieldChange: false
+                                    });
+                                } else if (itemKeys == 'inventorydetail' && sublistLine.hasOwnProperty(itemKeys)) {
+                                    var dataLot = sublistLine[itemKeys];
+                                    log.debug('inventory detail', 'count: ' + dataLot.length);
+                                    if (dataLot.length > 0) {
 
-                                var tranOrdInvDet = tranOrd.getCurrentSublistSubrecord({
-                                    sublistId: 'item',
-                                    fieldId: itemKeys
-                                });
+                                        var tranOrdInvDet = tranOrd.getCurrentSublistSubrecord({
+                                            sublistId: 'item',
+                                            fieldId: itemKeys
+                                        });
 
-                                for (var j = 0; j < dataLot.length; j++) {
-                                    dataLotKeys = dataLot[j];
-                                    for (var lotKeys in dataLotKeys) {
-                                        if (dataLotKeys.hasOwnProperty(lotKeys)) {
-                                            tranOrdInvDet.selectNewLine({
+                                        for (var j = 0; j < dataLot.length; j++) {
+                                            dataLotKeys = dataLot[j];
+                                            for (var lotKeys in dataLotKeys) {
+                                                if (dataLotKeys.hasOwnProperty(lotKeys)) {
+                                                    tranOrdInvDet.selectNewLine({
+                                                        sublistId: 'inventoryassignment'
+                                                    });
+
+                                                    tranOrdInvDet.setCurrentSublistValue({
+                                                        sublistId: 'inventoryassignment',
+                                                        fieldId: lotKeys,
+                                                        value: dataLotKeys[lotKeys],
+                                                        ignoreFieldChange: false
+                                                    });
+                                                }
+                                            }
+                                            tranOrdInvDet.commitLine({
                                                 sublistId: 'inventoryassignment'
-                                            });
-
-                                            tranOrdInvDet.setCurrentSublistValue({
-                                                sublistId: 'inventoryassignment',
-                                                fieldId: lotKeys,
-                                                value: dataLotKeys[lotKeys],
-                                                ignoreFieldChange: false
                                             });
                                         }
                                     }
-                                    tranOrdInvDet.commitLine({
-                                        sublistId: 'inventoryassignment'
-                                    });
                                 }
+                            } else {
+                                continue;
                             }
-
                         }
+                        log.debug('commit item', 'commit item line: ' + [x]);
+                        tranOrd.commitLine({
+                            sublistId: 'item'
+                        });
                     }
-                    tranOrd.commitLine({
-                        sublistId: 'item'
-                    });
                 }
                 var TOid = tranOrd.save();
+                log.debug('newTO', TOid);
 
                 var loadTO = record.load({
                     type: record.Type.TRANSFER_ORDER,
