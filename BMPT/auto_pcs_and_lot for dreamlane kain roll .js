@@ -9,14 +9,44 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
         var inventorydetail = [];
         var cnt = '';
 
+        var customForm = scriptContext.currentRecord.getValue({
+            fieldId: 'customform'
+        });
+        log.debug('Custom Form', customForm);
+
+        var soGrosir = scriptContext.currentRecord.getValue({
+            fieldId: 'custbody_grosir'
+        });
+        log.debug('SO Roll', soGrosir);
+
         var warehouse = scriptContext.currentRecord.getValue({
             fieldId: 'location'
         });
+
         if (scriptContext.sublistId == 'item') {
             var itemWarehouse = scriptContext.currentRecord.getCurrentSublistValue({
                 sublistId: 'item',
                 fieldId: 'location',
             });
+
+            var quantity = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId: 'item',
+                fieldId: 'quantity',
+            });
+
+            var quantityAvailable = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId: 'item',
+                fieldId: 'quantityavailable',
+            });
+            if (customForm == 115) {
+                if (quantity > quantityAvailable) {
+                    dialog.alert({ // Alert jika terjadi error
+                        title: "Alert!",
+                        message: "Pastikan " + "Quantity".bold() + " tidak lebih besar dari " + "Quantity Available !!".bold()
+                    });
+                    log.debug("Alert", "Alert quantity displayed successfully");
+                }
+            }
 
             var createTrfOrd = scriptContext.currentRecord.getCurrentSublistValue({
                 sublistId: 'item',
@@ -32,6 +62,40 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
                 cnt = invdetail.getLineCount({
                     sublistId: 'inventoryassignment'
                 });
+
+                if (customForm == 114 && soGrosir == true) {
+                    scriptContext.currentRecord.setCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_bmpt_pcs',
+                        value: cnt
+                    });
+
+                    if (cnt >= 1 && cnt <= 9) {
+                        scriptContext.currentRecord.setCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'price',
+                            value: 18
+                        });
+                    } else if (cnt <= 10 && cnt <= 19) {
+                        scriptContext.currentRecord.setCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'price',
+                            value: 19
+                        });
+                    } else if (cnt >= 20) {
+                        scriptContext.currentRecord.setCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'price',
+                            value: 20
+                        });
+                    }
+                } else {
+                    scriptContext.currentRecord.setCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_bmpt_pcs',
+                        value: cnt
+                    });
+                }
 
                 for (var i = 0; i < cnt; i++) {
                     invdetail.selectLine({
@@ -86,19 +150,17 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
                     value: JSON.stringify(inventorydetail)
                 });
 
-                scriptContext.currentRecord.setCurrentSublistValue({
-                    sublistId: 'item',
-                    fieldId: 'custcol_bmpt_pcs',
-                    value: cnt
-                });
+                /*     scriptContext.currentRecord.setCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_bmpt_pcs',
+                        value: cnt
+                    }); */
 
                 scriptContext.currentRecord.setCurrentSublistValue({
                     sublistId: 'item',
                     fieldId: 'custcol_warehouse',
                     value: itemWarehouse
                 });
-
-
                 return true;
             } else {
                 return true;

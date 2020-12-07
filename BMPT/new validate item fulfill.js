@@ -171,6 +171,11 @@ define(['N/record', 'N/currentRecord', 'N/search'], function(record, currentReco
                                 title: 'soUpdate',
                                 details: soUpdate
                             });
+
+                            /*  soRecord.setValue({
+                                 fieldId: 'custbody_approval_reason',
+                                 value: input_reason
+                             }); */
                         }
 
                         //set approval status to 1 - pending approval
@@ -182,7 +187,12 @@ define(['N/record', 'N/currentRecord', 'N/search'], function(record, currentReco
                             }
                         });
 
-                        /* for (var u = 0; u < itemCount; u++) {
+                        /* soRecord.setValue({
+                            fieldId: 'custbody_approval_status_so',
+                            value: 1
+                        }); */
+
+                        for (var u = 0; u < itemCount; u++) {
                             var fulfill = currentRecord.getSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'itemreceive',
@@ -230,6 +240,7 @@ define(['N/record', 'N/currentRecord', 'N/search'], function(record, currentReco
                                         details: SOItem
                                     });
 
+                                    // Set SO Sublist Value. 
                                     if (currentItem == SOItem) {
                                         soRecord.setCurrentSublistValue({
                                             sublistId: 'item',
@@ -248,12 +259,11 @@ define(['N/record', 'N/currentRecord', 'N/search'], function(record, currentReco
                                     });
                                 }
                             }
-                        } */
-
-                        // soRecord.save();
+                        }
+                        soRecord.save();
 
                         //open Sales Order Record at current Windows.
-                        window.open('https://6261179-sb1.app.netsuite.com/app/accounting/transactions/salesord.nl?id=' + soId, +'_self');
+                        window.open('https://6261179-sb1.app.netsuite.com/app/accounting/transactions/salesord.nl?id=' + soId, +'_self').void();
                     } else {
                         alert('Silahkan Perbaiki dan Submit Kembali !!');
                     }

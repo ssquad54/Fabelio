@@ -6,6 +6,16 @@ define(['N/record', 'N/ui/dialog'], function(record, dialog) {
     function saveRecord(context) {
         var currentRecord = context.currentRecord;
 
+        var soReturn = currentRecord.getValue({
+            fieldId: 'custbody_bmpt_return',
+        });
+        log.debug({
+            title: 'So Retur',
+            details: soReturn
+        });
+        if (soReturn == true)
+            return true;
+
         var paymentMethod = currentRecord.getValue({
             fieldId: 'custbody_bmpt_metode_pembayaran'
         });
@@ -49,7 +59,13 @@ define(['N/record', 'N/ui/dialog'], function(record, dialog) {
             };
 
             if (totalBalance > (creditLimit * 0.90)) {
-                window.alert('Total Customer Balance ' + totalBalance.toLocaleString("id-ID", currencySymbol) + ' Sudah Melebihi Credit Limit Sebesar ' + (creditLimit * 0.90).toLocaleString("id-ID", currencySymbol));
+                var confirmation = confirm('Total Customer Balance ' + totalBalance.toLocaleString("id-ID", currencySymbol) + ' Sudah Melebihi Credit Limit Sebesar ' + (creditLimit * 0.90).toLocaleString("id-ID", currencySymbol));
+
+                if (confirmation) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
             /* else if (totalBalance > creditLimit) {
                            window.alert('Total Customer Balance ' + totalBalance.toLocaleString("id-ID", currencySymbol) + ' Sudah Mencapai Credit Limit Sebesar ' + creditLimit.toLocaleString("id-ID", currencySymbol));
