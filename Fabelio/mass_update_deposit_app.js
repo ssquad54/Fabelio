@@ -36,7 +36,7 @@ define(['N/transaction', 'N/record'], function(transaction, record) {
                 value: invDate
             });
 
-            depApp.save()
+            depApp.save();
 
             log.debug({
                 title: 'Success !',
@@ -59,7 +59,7 @@ define(['N/transaction', 'N/record'], function(transaction, record) {
                 value: refundDate
             });
 
-            depApp.save()
+            depApp.save();
 
             log.debug({
                 title: 'Success !',
