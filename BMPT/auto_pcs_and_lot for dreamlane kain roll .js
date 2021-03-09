@@ -22,12 +22,21 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
         var warehouse = scriptContext.currentRecord.getValue({
             fieldId: 'location'
         });
+        var profitCenter = scriptContext.currentRecord.getValue({
+            fieldId: 'department'
+        });
 
         if (scriptContext.sublistId == 'item') {
             var itemWarehouse = scriptContext.currentRecord.getCurrentSublistValue({
                 sublistId: 'item',
                 fieldId: 'location',
             });
+
+            var PriceLevel = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId: 'item',
+                fieldId: 'price'
+            });
+            log.debug('PriceLevel', PriceLevel);
 
             var quantity = scriptContext.currentRecord.getCurrentSublistValue({
                 sublistId: 'item',
@@ -38,7 +47,7 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
                 sublistId: 'item',
                 fieldId: 'quantityavailable',
             });
-            if (customForm == 115) {
+            if (profitCenter == 2 && customForm != 118) {
                 if (quantity > quantityAvailable) {
                     dialog.alert({ // Alert jika terjadi error
                         title: "Alert!",
@@ -63,13 +72,12 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
                     sublistId: 'inventoryassignment'
                 });
 
-                if (customForm == 114 && soGrosir == true) {
+                if (customForm == 114 && soGrosir == true && PriceLevel != 13) {
                     scriptContext.currentRecord.setCurrentSublistValue({
                         sublistId: 'item',
                         fieldId: 'custcol_bmpt_pcs',
                         value: cnt
                     });
-
                     if (cnt >= 1 && cnt <= 9) {
                         scriptContext.currentRecord.setCurrentSublistValue({
                             sublistId: 'item',
@@ -160,6 +168,17 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
                     sublistId: 'item',
                     fieldId: 'custcol_warehouse',
                     value: itemWarehouse
+                });
+
+                scriptContext.currentRecord.removeCurrentSublistSubrecord({
+                    sublistId: 'item',
+                    fieldId: 'inventorydetail'
+                });
+
+                scriptContext.currentRecord.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'location',
+                    value: warehouse
                 });
                 return true;
             } else {

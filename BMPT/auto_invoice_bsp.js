@@ -24,7 +24,7 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
             details: vendorId
         });
 
-        if (vendorId == 29) { // vendorId : 24 - BENTARA SINAR PRIMA, PT
+        if (vendorId == 29) { // vendorId : 29 - BENTARA SINAR PRIMA, PT
             tranDate = billPayment.getValue({
                 fieldId: 'trandate'
             });
@@ -79,9 +79,9 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
                 value: 121
             });
 
-            invoice.setValue({ // Set Entity Value to 25 - BENTARA SINAR PRIMA, PT
+            invoice.setValue({ // Set Entity Value to 3182 - BENTARA SINAR PRIMA, PT
                 fieldId: 'entity',
-                value: 25
+                value: 3182
             });
 
             invoice.setValue({
@@ -118,11 +118,11 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
                 sublistId: 'item'
             });
 
-            // Set Item - Discount BSP
+            // Set Item - Discount BSP - 7322
             invoice.setCurrentSublistValue({
                 sublistId: 'item',
                 fieldId: 'item',
-                value: 43
+                value: 7322
             });
 
             invoice.setCurrentSublistValue({

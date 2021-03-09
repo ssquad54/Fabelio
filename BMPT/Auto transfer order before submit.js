@@ -8,70 +8,7 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
             return;
 
         var currentRecord = context.newRecord;
-        var warehouse = currentRecord.getValue({
-            fieldId: 'location'
-        });
 
-        var lineCount = currentRecord.getLineCount({
-            sublistId: 'item'
-        });
-
-        for (var u = 0; u < lineCount; u++) {
-            var createTO = currentRecord.getSublistValue({
-                sublistId: 'item',
-                fieldId: 'custcol_create_to',
-                line: u
-            });
-            log.debug('createTO', createTO);
-
-            var commit = currentRecord.getSublistValue({
-                sublistId: 'item',
-                fieldId: 'quantitycommitted',
-                line: u
-            });
-
-            if (createTO == true) {
-                var hasSublist = currentRecord.hasSublistSubrecord({
-                    sublistId: 'item',
-                    fieldId: 'inventorydetail',
-                    line: u
-                });
-
-                log.debug('hasSublist', hasSublist);
-
-                if (hasSublist) {
-                    currentRecord.removeSublistSubrecord({
-                        sublistId: 'item',
-                        fieldId: 'inventorydetail',
-                        line: u
-                    });
-                    log.debug('remove subrecord', 'goo!!');
-
-                    var hasSublist2 = currentRecord.hasSublistSubrecord({
-                        sublistId: 'item',
-                        fieldId: 'inventorydetail',
-                        line: u
-                    });
-                    log.debug('hasSublist2', hasSublist2);
-
-                    currentRecord.setSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'location',
-                        line: u,
-                        value: warehouse
-                    });
-                    log.debug('set warehouse', 'goo!!');
-                }
-            }
-        }
-    }
-    // Start After Submit Script
-    function afterSubmit(context) {
-        if (context.type != context.UserEventType.CREATE)
-            return;
-
-        var currentRecord = context.newRecord;
-        //get mainline value first
         var tranDate = currentRecord.getValue({
             fieldId: 'trandate'
         });
@@ -91,8 +28,6 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
             fieldId: 'class'
         });
         log.debug('salesChannel', salesChannel);
-
-
 
         //get Sublist Value
         var warehouseArray = [];
@@ -300,48 +235,30 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
                 var TOid = tranOrd.save();
                 log.debug('newTO', TOid);
 
-                var loadTO = record.load({
-                    type: record.Type.TRANSFER_ORDER,
-                    id: TOid
-                });
+                for (u = 0; u < lineCount; u++) {
 
-                var warehouseNewTranOrd = loadTO.getValue({
-                    fieldId: 'location'
-                });
-
-                var loadSO = record.load({
-                    type: record.Type.SALES_ORDER,
-                    id: currentRecord.id
-                });
-
-                var loadSOLineCount = loadSO.getLineCount({
-                    sublistId: 'item'
-                });
-
-                for (z = 0; z < loadSOLineCount; z++) {
-                    var loadSOWarehouseLine = loadSO.getSublistValue({
+                    currentRecord.setSublistValue({
                         sublistId: 'item',
-                        fieldId: 'custcol_warehouse',
-                        line: z
+                        fieldId: 'custcol_transfer_order_id',
+                        line: u,
+                        value: TOid
                     });
+                    log.debug('set Transfer Order ID', 'goo!!');
 
-                    if (loadSOWarehouseLine == warehouseNewTranOrd) {
-                        loadSO.setSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'custcol_transfer_order_id',
-                            line: z,
-                            value: TOid
-                        });
-                    }
+                    currentRecord.setSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'location',
+                        line: u,
+                        value: warehouse
+                    });
+                    log.debug('set warehouse', 'goo!!');
                 }
-                var updateSO = loadSO.save();
-                log.debug('updateSO', updateSO);
             }
         }
     }
 
     return {
         beforeSubmit: beforeSubmit,
-        afterSubmit: afterSubmit
+        // afterSubmit: afterSubmit
     };
 });
