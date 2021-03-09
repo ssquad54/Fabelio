@@ -89,16 +89,16 @@ define(['N/record'], function(record) {
 
                     inventorydetail.push({
                         issueinventorynumber: lotNumber,
-                        quantity: lotQty
+                        quantity: lotQty * -1
                     });
                     log.debug("inventorydetail", inventorydetail);
                     log.debug("inventorydetail stringify", JSON.stringify(inventorydetail));
                     log.debug("inventorydetail.length", inventorydetail.length);
                 }
                 itemArray.push({
-                    item: item,
-                    adjustqtyby: quantity,
                     location: toWarehouse,
+                    item: item,
+                    adjustqtyby: quantity * -1,
                     inventorydetail: inventorydetail
                 });
             }
@@ -158,15 +158,7 @@ define(['N/record'], function(record) {
                             sublistId: 'inventory',
                             fieldId: itemKeys,
                             value: sublistLine[itemKeys],
-                            ignoreFieldChange: true
-                        });
-                    } else if (itemKeys == 'adjustqtyby') {
-                        log.debug('adjustqtyby', sublistLine[itemKeys] * -1);
-                        objRecord.setCurrentSublistValue({
-                            sublistId: 'inventory',
-                            fieldId: itemKeys,
-                            value: sublistLine[itemKeys] * -1,
-                            ignoreFieldChange: true
+                            ignoreFieldChange: false
                         });
                     } else if (itemKeys == 'location') {
                         log.debug('location', sublistLine[itemKeys]);
@@ -174,9 +166,17 @@ define(['N/record'], function(record) {
                             sublistId: 'inventory',
                             fieldId: itemKeys,
                             value: sublistLine[itemKeys],
-                            ignoreFieldChange: true
+                            ignoreFieldChange: false
                         });
-                    } else if (itemKeys == 'inventorydetail' && sublistLine.hasOwnProperty(itemKeys)) {
+                    } else if (itemKeys == 'adjustqtyby') {
+                        log.debug('adjustqtyby', sublistLine[itemKeys]);
+                        objRecord.setCurrentSublistValue({
+                            sublistId: 'inventory',
+                            fieldId: itemKeys,
+                            value: sublistLine[itemKeys],
+                            ignoreFieldChange: false
+                        });
+                    } else if (itemKeys == 'inventorydetail') {
                         var dataLot = sublistLine[itemKeys];
                         log.debug('inventory detail', 'count: ' + dataLot.length);
                         if (dataLot.length > 0) {
@@ -193,23 +193,12 @@ define(['N/record'], function(record) {
                                             sublistId: 'inventoryassignment'
                                         });
 
-                                        if (lotKeys == 'issueinventorynumber') {
-                                            log.debug('issueinventorynumber', dataLotKeys[lotKeys]);
-                                            objRecordInvDet.setCurrentSublistValue({
-                                                sublistId: 'inventoryassignment',
-                                                fieldId: lotKeys,
-                                                value: dataLotKeys[lotKeys],
-                                                ignoreFieldChange: false
-                                            });
-                                        } else if (lotKeys == 'quantity') {
-                                            log.debug('quantity', dataLotKeys[lotKeys] * -1);
-                                            objRecordInvDet.setCurrentSublistValue({
-                                                sublistId: 'inventoryassignment',
-                                                fieldId: lotKeys,
-                                                value: dataLotKeys[lotKeys] * -1,
-                                                ignoreFieldChange: false
-                                            });
-                                        }
+                                        objRecordInvDet.setCurrentSublistValue({
+                                            sublistId: 'inventoryassignment',
+                                            fieldId: lotKeys,
+                                            value: dataLotKeys[lotKeys],
+                                            ignoreFieldChange: false
+                                        });
                                     }
                                 }
                                 objRecordInvDet.commitLine({
@@ -227,10 +216,9 @@ define(['N/record'], function(record) {
                 sublistId: 'inventory'
             });
         }
-
-        var recordId = objRecord.save({
-            enableSourcing: true,
-            ignoreMandatoryFields: true
+        var invAdjID = objRecord.save({
+            enableSourcing: false,
+            ignoreMandatoryFields: false
         });
 
         return recordId;
