@@ -5,7 +5,7 @@
  *
  * Author: Eko Susanto
  */
-define(['N/record'], function(record) {
+define(['N/record', 'N/runtime'], function(record, runtime) {
     var scriptName = "create_inventory_adjustment ";
 
     function createInvAdj(scriptContext) {
@@ -107,37 +107,37 @@ define(['N/record'], function(record) {
             log.debug('itemArray.length', itemArray.length);
         }
 
-        var objRecord = record.create({
+        var invAdjust = record.create({
             type: record.Type.INVENTORY_ADJUSTMENT,
             isDynamic: true
         });
 
-        objRecord.setValue({
+        invAdjust.setValue({
             fieldId: 'trandate',
             value: date
         });
 
-        objRecord.setValue({
+        invAdjust.setValue({
             fieldId: 'account',
             value: 492
         });
 
-        objRecord.setValue({
+        invAdjust.setValue({
             fieldId: 'custbody_bmpt_alasan_adjusment_invento',
             value: 3
         });
 
-        objRecord.setValue({
+        invAdjust.setValue({
             fieldId: 'custbody_bmpt_inventory_transfer',
             value: internalId
         });
 
-        objRecord.setValue({
+        invAdjust.setValue({
             fieldId: 'department',
             value: profitCenter
         });
 
-        objRecord.setValue({
+        invAdjust.setValue({
             fieldId: 'adjlocation',
             value: toWarehouse
         });
@@ -148,13 +148,13 @@ define(['N/record'], function(record) {
 
             for (var itemKeys in sublistLine) {
                 if (sublistLine.hasOwnProperty(itemKeys)) {
-                    objRecord.selectNewLine({
+                    invAdjust.selectNewLine({
                         sublistId: 'inventory'
                     });
 
                     if (itemKeys == 'item') {
                         log.debug('item', sublistLine[itemKeys]);
-                        objRecord.setCurrentSublistValue({
+                        invAdjust.setCurrentSublistValue({
                             sublistId: 'inventory',
                             fieldId: itemKeys,
                             value: sublistLine[itemKeys],
@@ -162,7 +162,7 @@ define(['N/record'], function(record) {
                         });
                     } else if (itemKeys == 'location') {
                         log.debug('location', sublistLine[itemKeys]);
-                        objRecord.setCurrentSublistValue({
+                        invAdjust.setCurrentSublistValue({
                             sublistId: 'inventory',
                             fieldId: itemKeys,
                             value: sublistLine[itemKeys],
@@ -170,7 +170,7 @@ define(['N/record'], function(record) {
                         });
                     } else if (itemKeys == 'adjustqtyby') {
                         log.debug('adjustqtyby', sublistLine[itemKeys]);
-                        objRecord.setCurrentSublistValue({
+                        invAdjust.setCurrentSublistValue({
                             sublistId: 'inventory',
                             fieldId: itemKeys,
                             value: sublistLine[itemKeys],
@@ -180,7 +180,7 @@ define(['N/record'], function(record) {
                         var dataLot = sublistLine[itemKeys];
                         log.debug('inventory detail', 'count: ' + dataLot.length);
                         if (dataLot.length > 0) {
-                            var objRecordInvDet = objRecord.getCurrentSublistSubrecord({
+                            var adjInvDetail = invAdjust.getCurrentSublistSubrecord({
                                 sublistId: 'inventory',
                                 fieldId: itemKeys
                             });
@@ -189,11 +189,11 @@ define(['N/record'], function(record) {
                                 log.debug('dataLotKey', dataLotKeys);
                                 for (var lotKeys in dataLotKeys) {
                                     if (dataLotKeys.hasOwnProperty(lotKeys)) {
-                                        objRecordInvDet.selectNewLine({
+                                        adjInvDetail.selectNewLine({
                                             sublistId: 'inventoryassignment'
                                         });
 
-                                        objRecordInvDet.setCurrentSublistValue({
+                                        adjInvDetail.setCurrentSublistValue({
                                             sublistId: 'inventoryassignment',
                                             fieldId: lotKeys,
                                             value: dataLotKeys[lotKeys],
@@ -201,7 +201,7 @@ define(['N/record'], function(record) {
                                         });
                                     }
                                 }
-                                objRecordInvDet.commitLine({
+                                adjInvDetail.commitLine({
                                     sublistId: 'inventoryassignment'
                                 });
                             }
@@ -212,16 +212,18 @@ define(['N/record'], function(record) {
                 }
             }
             log.debug('commit item', 'commit item line: ' + [z]);
-            objRecord.commitLine({
+            invAdjust.commitLine({
                 sublistId: 'inventory'
             });
         }
-        var invAdjID = objRecord.save({
+        var invAdjustID = invAdjust.save({
             enableSourcing: false,
             ignoreMandatoryFields: false
         });
 
-        return recordId;
+        log.debug('adjustmentID', invAdjustID);
+
+        return invAdjustID;
     }
 
     return {
