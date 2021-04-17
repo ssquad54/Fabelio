@@ -79,7 +79,7 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
                 value: 121
             });
 
-            invoice.setValue({ // Set Entity Value to 3182 - BENTARA SINAR PRIMA, PT
+            invoice.setValue({ // Set Customer Value to 3182 - BENTARA SINAR PRIMA, PT
                 fieldId: 'entity',
                 value: 3182
             });
@@ -106,7 +106,7 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, search, trans
 
             invoice.setValue({ // Sales Channel - Dropship/Reseller
                 fieldId: 'class',
-                value: 6
+                value: 5
             });
 
             invoice.setValue({ // Warehouse - BMPT

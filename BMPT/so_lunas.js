@@ -77,69 +77,71 @@ define(['N/record', 'N/search', 'N/transaction'], function(record, transaction) 
                         details: createdFrom
                     });
 
-                    var salesOrder = record.load({
-                        type: record.Type.SALES_ORDER,
-                        id: createdFrom
-                    });
-                    log.debug({
-                        title: "salesOrder",
-                        details: salesOrder
-                    });
-
-                    var soAmount = salesOrder.getValue({
-                        fieldId: 'total'
-                    });
-                    log.debug({
-                        title: "soAmount",
-                        details: soAmount
-                    });
-
-                    var soLink = salesOrder.getLineCount({
-                        sublistId: 'links'
-                    });
-                    log.debug({
-                        title: "soLink",
-                        details: soLink
-                    });
-
-                    var invAmount = 0;
-
-                    for (var u = 0; u < soLink; u++) {
-                        var soLinkType = salesOrder.getSublistValue({
-                            sublistId: 'links',
-                            fieldId: 'type',
-                            line: u
+                    if (createdFrom) {
+                        var salesOrder = record.load({
+                            type: record.Type.SALES_ORDER,
+                            id: createdFrom
                         });
                         log.debug({
-                            title: "soLinkType",
-                            details: soLinkType
+                            title: "salesOrder",
+                            details: salesOrder
                         });
 
-                        if (soLinkType == 'Invoice') {
-                            var amount = salesOrder.getSublistValue({
+                        var soAmount = salesOrder.getValue({
+                            fieldId: 'total'
+                        });
+                        log.debug({
+                            title: "soAmount",
+                            details: soAmount
+                        });
+
+                        var soLink = salesOrder.getLineCount({
+                            sublistId: 'links'
+                        });
+                        log.debug({
+                            title: "soLink",
+                            details: soLink
+                        });
+
+                        var invAmount = 0;
+
+                        for (var u = 0; u < soLink; u++) {
+                            var soLinkType = salesOrder.getSublistValue({
                                 sublistId: 'links',
-                                fieldId: 'total',
+                                fieldId: 'type',
                                 line: u
                             });
                             log.debug({
-                                title: "amount",
-                                details: amount
+                                title: "soLinkType",
+                                details: soLinkType
                             });
-                            invAmount += amount;
-                            log.debug({
-                                title: "invAmount",
-                                details: invAmount
-                            });
-                        }
-                    }
-                    if (invAmount >= soAmount) {
-                        salesOrder.setValue({
-                            fieldId: 'custbody_bmpt_status_so',
-                            value: 6
-                        });
 
-                        var updateSO = salesOrder.save();
-                        log.debug('updateSO', updateSO);
+                            if (soLinkType == 'Invoice') {
+                                var amount = salesOrder.getSublistValue({
+                                    sublistId: 'links',
+                                    fieldId: 'total',
+                                    line: u
+                                });
+                                log.debug({
+                                    title: "amount",
+                                    details: amount
+                                });
+                                invAmount += amount;
+                                log.debug({
+                                    title: "invAmount",
+                                    details: invAmount
+                                });
+                            }
+                        }
+                        if (invAmount >= soAmount) {
+                            salesOrder.setValue({
+                                fieldId: 'custbody_bmpt_status_so',
+                                value: 6
+                            });
+
+                            var updateSO = salesOrder.save();
+                            log.debug('updateSO', updateSO);
+                        }
                     }
                 }
             }

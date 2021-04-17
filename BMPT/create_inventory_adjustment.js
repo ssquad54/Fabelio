@@ -38,11 +38,11 @@ define(['N/record', 'N/runtime'], function(record, runtime) {
         });
         log.debug('lineCount', lineCount);
 
-        var itemArray = [];
-        var inventorydetail = [];
+
         var itemWarehouse;
         var itemName;
         var itemQty;
+        var itemArray = [];
 
         if (lineCount > 0) {
             for (var i = 0; i < lineCount; i++) {
@@ -68,6 +68,8 @@ define(['N/record', 'N/runtime'], function(record, runtime) {
                     fieldId: 'inventorydetail'
                 });
                 log.debug('invDetail', invDetail);
+
+                var inventorydetail = [];
 
                 for (var u = 0; u < invDetail.getLineCount('inventoryassignment'); u++) {
                     invDetail.selectLine({

@@ -38,6 +38,17 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
             });
             log.debug('PriceLevel', PriceLevel);
 
+            var sublistParent = scriptContext.currentRecord.getCurrentSublistValue({
+                sublistId: 'item',
+                fieldId: 'oqpbucket'
+            });
+            log.debug('sublistParent', sublistParent);
+
+            var currIndex = scriptContext.currentRecord.getCurrentSublistIndex({
+                sublistId: 'item'
+            });
+            log.debug('currIndex', currIndex);
+
             var quantity = scriptContext.currentRecord.getCurrentSublistValue({
                 sublistId: 'item',
                 fieldId: 'quantity',
@@ -72,39 +83,11 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
                     sublistId: 'inventoryassignment'
                 });
 
-                if (customForm == 114 && soGrosir == true && PriceLevel != 13) {
-                    scriptContext.currentRecord.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_bmpt_pcs',
-                        value: cnt
-                    });
-                    if (cnt >= 1 && cnt <= 9) {
-                        scriptContext.currentRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'price',
-                            value: 18
-                        });
-                    } else if (cnt >= 10 && cnt <= 19) {
-                        scriptContext.currentRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'price',
-                            value: 19
-                        });
-                    } else if (cnt >= 20) {
-                        scriptContext.currentRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'price',
-                            value: 20
-                        });
-                    }
-                } else {
-                    scriptContext.currentRecord.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_bmpt_pcs',
-                        value: cnt
-                    });
-                }
-
+                scriptContext.currentRecord.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'custcol_bmpt_pcs',
+                    value: cnt
+                });
                 for (var i = 0; i < cnt; i++) {
                     invdetail.selectLine({
                         sublistId: 'inventoryassignment',
