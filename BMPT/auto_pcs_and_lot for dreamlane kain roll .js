@@ -72,38 +72,38 @@ define(['N/currentRecord', 'N/ui/dialog'], function(currentRecord, dialog) {
                     sublistId: 'inventoryassignment'
                 });
 
-                if (customForm == 114 && soGrosir == true && PriceLevel != 13) {
-                    scriptContext.currentRecord.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_bmpt_pcs',
-                        value: cnt
-                    });
-                    if (cnt >= 1 && cnt <= 9) {
+                /*     if (customForm == 114 && soGrosir == true && PriceLevel != 13) {
                         scriptContext.currentRecord.setCurrentSublistValue({
                             sublistId: 'item',
-                            fieldId: 'price',
-                            value: 18
+                            fieldId: 'custcol_bmpt_pcs',
+                            value: cnt
                         });
-                    } else if (cnt >= 10 && cnt <= 19) {
-                        scriptContext.currentRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'price',
-                            value: 19
-                        });
-                    } else if (cnt >= 20) {
-                        scriptContext.currentRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'price',
-                            value: 20
-                        });
-                    }
-                } else {
-                    scriptContext.currentRecord.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_bmpt_pcs',
-                        value: cnt
-                    });
-                }
+                        if (cnt >= 1 && cnt <= 9) {
+                            scriptContext.currentRecord.setCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'price',
+                                value: 18
+                            });
+                        } else if (cnt >= 10 && cnt <= 19) {
+                            scriptContext.currentRecord.setCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'price',
+                                value: 19
+                            });
+                        } else if (cnt >= 20) {
+                            scriptContext.currentRecord.setCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'price',
+                                value: 20
+                            });
+                        }
+                    } else { */
+                scriptContext.currentRecord.setCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'custcol_bmpt_pcs',
+                    value: cnt
+                });
+                //      }
 
                 for (var i = 0; i < cnt; i++) {
                     invdetail.selectLine({
